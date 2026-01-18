@@ -8,9 +8,9 @@
 
     <div class="section-label">Size</div>
     <div class="slider-grid">
-      <label>Min</label><input type="range" min="0" max="20" v-model="cfg.minSize" @input="onCustomChange"><span>{{ cfg.minSize }}</span>
-      <label>Max</label><input type="range" min="5" max="100" v-model="cfg.maxSize" @input="onCustomChange"><span>{{ cfg.maxSize }}</span>
-      <label>Scale</label><input type="range" min="1" max="50" v-model="cfg.sizeScale" @input="onCustomChange"><span>{{ cfg.sizeScale }}</span>
+      <label>Min</label><input type="range" min="0" max="20" v-model.number="cfg.minSize" @input="onCustomChange"><span>{{ cfg.minSize }}</span>
+      <label>Max</label><input type="range" min="5" max="100" v-model.number="cfg.maxSize" @input="onCustomChange"><span>{{ cfg.maxSize }}</span>
+      <label>Scale</label><input type="range" min="1" max="50" v-model.number="cfg.sizeScale" @input="onCustomChange"><span>{{ cfg.sizeScale }}</span>
     </div>
 
     <div class="section-label">Color</div>
@@ -25,33 +25,38 @@
 
     <!-- Mode: BrightnessMap -->
     <div v-if="cfg.colorMode === 'BrightnessMap'" class="slider-grid group">
-         <label>Red</label><input type="range" min="0" max="255" v-model="cfg.brightnessR" @input="onCustomChange"><span>{{ cfg.brightnessR }}</span>
-         <label>Blue</label><input type="range" min="0" max="255" v-model="cfg.brightnessB" @input="onCustomChange"><span>{{ cfg.brightnessB }}</span>
-         <label>G-Scale</label><input type="range" min="0" max="255" v-model="cfg.brightnessGScale" @input="onCustomChange"><span>{{ cfg.brightnessGScale }}</span>
+         <label>Red</label><input type="range" min="0" max="255" v-model.number="cfg.brightnessR" @input="onCustomChange"><span>{{ cfg.brightnessR }}</span>
+         <label>Blue</label><input type="range" min="0" max="255" v-model.number="cfg.brightnessB" @input="onCustomChange"><span>{{ cfg.brightnessB }}</span>
+         <label>G-Scale</label><input type="range" min="0" max="255" v-model.number="cfg.brightnessGScale" @input="onCustomChange"><span>{{ cfg.brightnessGScale }}</span>
     </div>
 
     <!-- Mode: Saturation Shared -->
     <div v-if="cfg.colorMode === 'PhaseHue' || cfg.colorMode === 'FreqGradient_PhaseBrightness'" class="slider-grid group">
-        <label>Sat</label><input type="range" min="0" max="100" v-model="cfg.hueSaturation" @input="onCustomChange"><span>{{ cfg.hueSaturation }}</span>
+        <label>Sat</label><input type="range" min="0" max="100" v-model.number="cfg.hueSaturation" @input="onCustomChange"><span>{{ cfg.hueSaturation }}</span>
     </div>
 
     <!-- Mode: Hue -->
     <div v-if="cfg.colorMode === 'PhaseHue'" class="slider-grid group">
-        <label>Offset</label><input type="range" min="0" max="360" v-model="cfg.hueOffset" @input="onCustomChange"><span>{{ cfg.hueOffset }}</span>
-        <label>BriScale</label><input type="range" min="0" max="255" v-model="cfg.hueBrightnessScale" @input="onCustomChange"><span>{{ cfg.hueBrightnessScale }}</span>
+        <label>Offset</label><input type="range" min="0" max="360" v-model.number="cfg.hueOffset" @input="onCustomChange"><span>{{ cfg.hueOffset }}°</span>
+        <label>Range</label><input type="range" min="-1" max="1" step="0.01" v-model.number="cfg.hueRangeRatio" @input="onCustomChange"><span>{{ cfg.hueRangeRatio }}</span>
+        <label>BriScale</label><input type="range" min="0" max="255" v-model.number="cfg.hueBrightnessScale" @input="onCustomChange"><span>{{ cfg.hueBrightnessScale }}</span>
+        
+        <div class="range-display" style="grid-column: 1 / span 3; color: #aaa; font-size: 0.8em; margin-top: 4px;">
+          Map: {{ hueRangeText }}
+        </div>
     </div>
 
     <!-- Mode: Freq -->
     <div v-if="cfg.colorMode === 'FreqGradient_PhaseBrightness'" class="slider-grid group">
-        <label>StartHue</label><input type="range" min="0" max="360" v-model="cfg.freqHueStart" @input="onCustomChange"><span>{{ cfg.freqHueStart }}</span>
-        <label>EndHue</label><input type="range" min="0" max="360" v-model="cfg.freqHueEnd" @input="onCustomChange"><span>{{ cfg.freqHueEnd }}</span>
+        <label>StartHue</label><input type="range" min="0" max="360" v-model.number="cfg.freqHueStart" @input="onCustomChange"><span>{{ cfg.freqHueStart }}</span>
+        <label>EndHue</label><input type="range" min="0" max="360" v-model.number="cfg.freqHueEnd" @input="onCustomChange"><span>{{ cfg.freqHueEnd }}</span>
     </div>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { VIZ_PRESETS, type ButterflyVisualizerConfig } from '../visualizer/config';
 import { setVisualizerConfig } from '../logic/audioEngine';
 
@@ -72,6 +77,26 @@ function onCustomChange() {
     selectedPresetName.value = "Custom";
     setVisualizerConfig({ ...cfg, name: 'Custom' });
 }
+
+const hueRangeText = computed(() => {
+    const start = ((cfg.hueOffset % 360) + 360) % 360;
+    const range = cfg.hueRangeRatio * 360;
+    const endRaw = cfg.hueOffset + range;
+    const end = ((endRaw % 360) + 360) % 360;
+
+    // Distinguish between 0 range and 360 range when start equals end
+    if (start === end && Math.abs(cfg.hueRangeRatio) >= 1) {
+        const sign = cfg.hueRangeRatio > 0 ? "" : "-";
+        return `${start.toFixed(0)}° ～ ${sign}360°`;
+    }
+    
+    // For ratio 0, just show a single value
+    if (cfg.hueRangeRatio === 0) {
+        return `${start.toFixed(0)}°`;
+    }
+
+    return `${start.toFixed(0)}° ～ ${end.toFixed(0)}°`;
+});
 
 // Ensure init state helps engine (though engine defaults might match)
 setVisualizerConfig(cfg);

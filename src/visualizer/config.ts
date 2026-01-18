@@ -16,8 +16,8 @@ export interface ButterflyVisualizerConfig {
     brightnessB: number;
     brightnessGScale: number; // Multiplier for magnitude to get Green component
 
-    // PhaseHue specific
     hueOffset: number;   // 0-360
+    hueRangeRatio: number; // -1.0 to 1.0 (Mapping expansion/contraction)
     hueSaturation: number; // 0-100
     hueBrightnessScale: number; // Multiplier for magnitude to get Brightness
 
@@ -38,6 +38,7 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         brightnessGScale: 50,
         // Unused
         hueOffset: 0,
+        hueRangeRatio: 1.0,
         hueSaturation: 80,
         hueBrightnessScale: 100,
         freqHueStart: 240,
@@ -53,6 +54,7 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         brightnessB: 255,
         brightnessGScale: 50,
         hueOffset: 0,
+        hueRangeRatio: 1.0,
         hueSaturation: 80,
         hueBrightnessScale: 80,
         freqHueStart: 240,
@@ -68,6 +70,7 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         brightnessB: 0,
         brightnessGScale: 0,
         hueOffset: 0,
+        hueRangeRatio: 1.0,
         hueSaturation: 90,
         hueBrightnessScale: 0,
         freqHueStart: 240, // Blue

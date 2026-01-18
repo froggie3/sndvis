@@ -24,10 +24,15 @@ export class PhaseHueStrategy implements IColorStrategy {
         const { complex } = context;
         // Calculate Phase
         const phase = Math.atan2(complex.im, complex.re); // -PI to PI
-        // Map -PI..PI to 0..360
-        let hue = p.degrees(phase) + config.hueOffset;
-        if (hue < 0) hue += 360;
-        hue = hue % 360;
+        // Normalize phase to 0..1
+        const normPhase = (phase + Math.PI) / (2 * Math.PI); // 0..1
+
+        // Map using Offset and RangeRatio
+        // Starting point is hueOffset, mapping range is hueRangeRatio * 360
+        let hue = config.hueOffset + normPhase * config.hueRangeRatio * 360;
+
+        // Wrap to 0..360 correctly even for negative results
+        hue = ((hue % 360) + 360) % 360;
 
         const sat = config.hueSaturation;
         const bri = Math.min(100, context.adsrValue * config.hueBrightnessScale);
