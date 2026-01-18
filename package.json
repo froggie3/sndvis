@@ -14,7 +14,9 @@
     "vite": "^7.2.4"
   },
   "dependencies": {
+    "@vitejs/plugin-vue": "^6.0.3",
     "p5": "^2.2.0",
+    "vue": "^3.5.26",
     "webm-writer": "^1.0.0"
   }
 }

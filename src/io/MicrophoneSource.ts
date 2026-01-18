@@ -93,19 +93,6 @@ export class MicrophoneSource implements IAudioSource {
         };
     }
 
-    getUIComponent(): HTMLElement | null {
-        // UI is handled by browser permission prompt mostly.
-        // But we could show a status indicator.
-        const div = document.createElement('div');
-        div.innerHTML = `
-            <div style="padding: 10px; color: white;">
-                <strong>Microphone Input</strong><br>
-                Listening...
-            </div>
-        `;
-        return div;
-    }
-
     disconnect(): void {
         this.stream?.getTracks().forEach(track => track.stop());
         this.sourceNode?.disconnect();

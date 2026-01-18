@@ -22,12 +22,6 @@ export interface IAudioSource {
     getMetaInfo(): AudioSourceMetadata;
 
     /**
-     * Get a DOM element for controlling this source (e.g. Play/Pause, Selection).
-     * Returns null if no UI is needed.
-     */
-    getUIComponent(): HTMLElement | null;
-
-    /**
      * Clean up resources.
      */
     disconnect(): void;

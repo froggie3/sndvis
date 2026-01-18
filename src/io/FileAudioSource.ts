@@ -10,11 +10,6 @@ export class FileAudioSource implements IAudioSource {
     private tempBuffer: Float32Array;
     private isPlaying: boolean = false;
 
-
-    // UI Elements
-    private fileInput: HTMLInputElement | null = null;
-    private container: HTMLElement | null = null;
-
     constructor(size: number = 2048) {
         this.size = size;
         this.tempBuffer = new Float32Array(size);
@@ -114,32 +109,6 @@ export class FileAudioSource implements IAudioSource {
             sampleRate: this.audioContext?.sampleRate || 44100,
             duration: this.audioBuffer?.duration
         };
-    }
-
-    getUIComponent(): HTMLElement | null {
-        if (this.container) return this.container;
-
-        this.container = document.createElement('div');
-        this.container.style.color = 'white';
-        this.container.style.padding = '10px';
-
-        const label = document.createElement('label');
-        label.innerText = "Select Audio File: ";
-
-        this.fileInput = document.createElement('input');
-        this.fileInput.type = "file";
-        this.fileInput.accept = "audio/*";
-        this.fileInput.addEventListener('change', (e) => {
-            const files = (e.target as HTMLInputElement).files;
-            if (files && files.length > 0) {
-                this.loadFile(files[0]);
-            }
-        });
-
-        this.container.appendChild(label);
-        this.container.appendChild(this.fileInput);
-
-        return this.container;
     }
 
     disconnect(): void {

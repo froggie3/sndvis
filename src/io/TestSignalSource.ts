@@ -53,17 +53,6 @@ export class TestSignalSource implements IAudioSource {
         };
     }
 
-    getUIComponent(): HTMLElement | null {
-        const div = document.createElement('div');
-        div.innerHTML = `
-            <div style="padding: 10px; color: white;">
-                <strong>Test Signal</strong><br>
-                Simulated Sine Wave
-            </div>
-        `;
-        return div;
-    }
-
     disconnect(): void {
         // Nothing to clean up
     }
