@@ -70,6 +70,16 @@ async function startExport() {
   driver.start();
 }
 
+// Shared AudioContext
+let sharedAudioContext: AudioContext | null = null;
+
+function getAudioContext(): AudioContext {
+  if (!sharedAudioContext) {
+    sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  return sharedAudioContext;
+}
+
 async function switchSource(type: string) {
   if (driver) driver.stop();
   if (currentSource) currentSource.disconnect();
@@ -88,9 +98,20 @@ async function switchSource(type: string) {
       break;
   }
 
-  // Initialize Source
-  // Note: Mic/File might require user gesture context resumption.
-  await currentSource.initialize();
+  // Initialize Source using Shared Context
+  // This prevents running out of AudioContexts (max 6 usually)
+  const ctx = getAudioContext();
+  if (ctx.state === 'suspended') {
+    await ctx.resume();
+  }
+
+  try {
+    await currentSource.initialize(ctx);
+  } catch (err) {
+    console.error("Failed to initialize source:", err);
+    alert("Failed to initialize audio source. check permissions or file integrity.");
+    return;
+  }
 
   // Update UI via Coordinator
   // Pass export handler Only if it's a file source (checked inside coordinator too, but good to be explicit or generic)
@@ -209,6 +230,179 @@ envAttackIn.addEventListener('input', handleCustomEnvChange);
 envReleaseIn.addEventListener('input', handleCustomEnvChange);
 envCurveIn.addEventListener('input', handleCustomEnvChange);
 
+
+// --- Visualizer Settings UI ---
+import { VIZ_PRESETS, type ButterflyVisualizerConfig } from './visualizer/config.js';
+
+const vizControl = document.createElement('div');
+vizControl.style.position = 'absolute';
+vizControl.style.bottom = '320px'; // Above Env Control
+vizControl.style.left = '20px';
+vizControl.style.zIndex = '100';
+vizControl.style.color = '#fff';
+vizControl.style.backgroundColor = 'rgba(0,0,0,0.5)';
+vizControl.style.padding = '10px';
+vizControl.style.borderRadius = '8px';
+vizControl.style.width = '300px';
+
+let vizPresetOptions = VIZ_PRESETS.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+vizPresetOptions += `<option value="Custom">Custom</option>`;
+
+vizControl.innerHTML = `
+    <strong>Visualizer Settings</strong><br>
+    <select id="vizPreset" style="margin-bottom: 5px; width: 100%;">${vizPresetOptions}</select>
+    
+    <div style="font-size: 0.85em; margin-bottom: 5px;">Size</div>
+    <div style="display: grid; grid-template-columns: 60px 1fr 30px; gap: 5px; align-items: center;">
+        <label>Min</label><input type="range" min="0" max="20" id="vizMinSize"><span id="valMinSize"></span>
+        <label>Max</label><input type="range" min="5" max="100" id="vizMaxSize"><span id="valMaxSize"></span>
+        <label>Scale</label><input type="range" min="1" max="50" id="vizSizeScale"><span id="valSizeScale"></span>
+    </div>
+
+    <div style="font-size: 0.85em; margin: 5px 0;">Color</div>
+    <label>Mode: <select id="vizColorMode">
+        <option value="BrightnessMap">Brightness</option>
+        <option value="PhaseHue">Phase Hue</option>
+        <option value="FreqGradient_PhaseBrightness">Freq Gradient</option>
+    </select></label>
+    
+    <div id="vizGroupBrightness" style="display:none; margin-top:5px;">
+        <div style="display: grid; grid-template-columns: 60px 1fr 30px; gap: 5px; align-items: center;">
+            <label>Red</label><input type="range" min="0" max="255" id="vizBriR"><span id="valBriR"></span>
+            <label>Blue</label><input type="range" min="0" max="255" id="vizBriB"><span id="valBriB"></span>
+            <label>G-Scale</label><input type="range" min="0" max="255" id="vizBriGScale"><span id="valBriGScale"></span>
+        </div>
+    </div>
+
+    <div id="vizGroupSat" style="display:none; margin-top:5px;">
+         <div style="display: grid; grid-template-columns: 60px 1fr 30px; gap: 5px; align-items: center;">
+            <label>Sat</label><input type="range" min="0" max="100" id="vizHueSat"><span id="valHueSat"></span>
+         </div>
+    </div>
+
+    <div id="vizGroupHue" style="display:none; margin-top:0px;">
+        <div style="display: grid; grid-template-columns: 60px 1fr 30px; gap: 5px; align-items: center;">
+            <label>Offset</label><input type="range" min="0" max="360" id="vizHueOffset"><span id="valHueOffset"></span>
+            <label>BriScale</label><input type="range" min="0" max="255" id="vizHueBriScale"><span id="valHueBriScale"></span>
+        </div>
+    </div>
+
+    <div id="vizGroupFreq" style="display:none; margin-top:0px;">
+        <div style="display: grid; grid-template-columns: 60px 1fr 30px; gap: 5px; align-items: center;">
+            <label>StartHue</label><input type="range" min="0" max="360" id="vizFreqHueStart"><span id="valFreqHueStart"></span>
+            <label>EndHue</label><input type="range" min="0" max="360" id="vizFreqHueEnd"><span id="valFreqHueEnd"></span>
+        </div>
+    </div>
+`;
+document.body.appendChild(vizControl);
+
+const vizPresetSel = document.getElementById('vizPreset') as HTMLSelectElement;
+const vizColorModeSel = document.getElementById('vizColorMode') as HTMLSelectElement;
+const grpBrightness = document.getElementById('vizGroupBrightness') as HTMLDivElement;
+const grpSat = document.getElementById('vizGroupSat') as HTMLDivElement;
+const grpHue = document.getElementById('vizGroupHue') as HTMLDivElement;
+const grpFreq = document.getElementById('vizGroupFreq') as HTMLDivElement;
+
+// Inputs
+const ids = [
+  'vizMinSize', 'vizMaxSize', 'vizSizeScale',
+  'vizBriR', 'vizBriB', 'vizBriGScale',
+  'vizHueOffset', 'vizHueSat', 'vizHueBriScale',
+  'vizFreqHueStart', 'vizFreqHueEnd'
+];
+const inputs: Record<string, HTMLInputElement> = {};
+ids.forEach(id => inputs[id] = document.getElementById(id) as HTMLInputElement);
+
+// Init Default
+updateVizUI(VIZ_PRESETS[0]);
+
+function updateVizUI(cfg: ButterflyVisualizerConfig) {
+  // Set inputs
+  inputs.vizMinSize.value = cfg.minSize.toString();
+  inputs.vizMaxSize.value = cfg.maxSize.toString();
+  inputs.vizSizeScale.value = cfg.sizeScale.toString();
+
+  inputs.vizBriR.value = cfg.brightnessR.toString();
+  inputs.vizBriB.value = cfg.brightnessB.toString();
+  inputs.vizBriGScale.value = cfg.brightnessGScale.toString();
+
+  inputs.vizHueOffset.value = cfg.hueOffset.toString();
+  inputs.vizHueSat.value = cfg.hueSaturation.toString();
+  inputs.vizHueBriScale.value = cfg.hueBrightnessScale.toString();
+
+  inputs.vizFreqHueStart.value = (cfg.freqHueStart ?? 240).toString();
+  inputs.vizFreqHueEnd.value = (cfg.freqHueEnd ?? 0).toString();
+
+  vizColorModeSel.value = cfg.colorMode;
+
+  updateVizDisplayValues();
+  updateVizGroupVisibility(cfg.colorMode);
+
+  visualizer.importSettings(cfg);
+}
+
+function updateVizDisplayValues() {
+  ids.forEach(id => {
+    const span = document.getElementById(id.replace('viz', 'val'));
+    if (span) span.innerText = inputs[id].value;
+  });
+}
+
+function updateVizGroupVisibility(mode: string) {
+  grpBrightness.style.display = 'none';
+  grpSat.style.display = 'none';
+  grpHue.style.display = 'none';
+  grpFreq.style.display = 'none';
+
+  if (mode === 'BrightnessMap') {
+    grpBrightness.style.display = 'block';
+  } else if (mode === 'PhaseHue') {
+    grpSat.style.display = 'block';
+    grpHue.style.display = 'block';
+  } else if (mode === 'FreqGradient_PhaseBrightness') {
+    grpSat.style.display = 'block';
+    grpFreq.style.display = 'block';
+  }
+}
+
+function getVizConfigFromUI(): ButterflyVisualizerConfig {
+  return {
+    name: 'Custom',
+    minSize: parseInt(inputs.vizMinSize.value),
+    maxSize: parseInt(inputs.vizMaxSize.value),
+    sizeScale: parseInt(inputs.vizSizeScale.value),
+    colorMode: vizColorModeSel.value as any,
+    brightnessR: parseInt(inputs.vizBriR.value),
+    brightnessB: parseInt(inputs.vizBriB.value),
+    brightnessGScale: parseInt(inputs.vizBriGScale.value),
+    hueOffset: parseInt(inputs.vizHueOffset.value),
+    hueSaturation: parseInt(inputs.vizHueSat.value),
+    hueBrightnessScale: parseInt(inputs.vizHueBriScale.value),
+    freqHueStart: parseInt(inputs.vizFreqHueStart.value),
+    freqHueEnd: parseInt(inputs.vizFreqHueEnd.value)
+  };
+}
+
+function handleCustomVizChange() {
+  vizPresetSel.value = "Custom";
+  updateVizDisplayValues();
+  updateVizGroupVisibility(vizColorModeSel.value);
+  visualizer.importSettings(getVizConfigFromUI());
+}
+
+// Listeners
+ids.forEach(id => inputs[id].addEventListener('input', handleCustomVizChange));
+vizColorModeSel.addEventListener('change', handleCustomVizChange);
+
+vizPresetSel.addEventListener('change', (e) => {
+  const name = (e.target as HTMLSelectElement).value;
+  const preset = VIZ_PRESETS.find(p => p.name === name);
+  if (preset) {
+    updateVizUI(preset);
+  }
+  // If Custom selected, do nothing (keep current)
+});
+
 // P5 Instance
 const sketch = (p: p5) => {
   p5Instance = p;
@@ -220,7 +414,8 @@ const sketch = (p: p5) => {
     visualizer.setup(p, p.width, p.height);
 
     // Initial Source Setup
-    await currentSource.initialize();
+    const ctx = getAudioContext();
+    await currentSource.initialize(ctx);
     coordinator.updateSourceUI(currentSource, undefined);
 
     // Initial Driver Setup

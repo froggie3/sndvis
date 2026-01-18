@@ -37,10 +37,15 @@ export class FileAudioSource implements IAudioSource {
     async loadFile(file: File) {
         if (!this.audioContext) return;
 
-        const arrayBuffer = await file.arrayBuffer();
-        this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-        // Reset playback
-        this.play();
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+            // Reset playback
+            this.play();
+        } catch (err) {
+            console.error("Failed to decode audio data:", err);
+            alert("Failed to load audio file. It might be corrupted or an unsupported format.");
+        }
     }
 
     play() {
