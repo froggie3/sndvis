@@ -80,14 +80,18 @@ setVisualizerConfig(cfg);
 
 <style scoped>
 .control-panel {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
   color: white;
-  padding: 10px;
+  padding: 15px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   width: 300px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
+
+
 
 .section-label {
     font-size: 0.85em; 

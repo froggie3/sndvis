@@ -29,6 +29,17 @@ export const appState = reactive({
     exportProgress: 0,
 });
 
+export const playbackState = reactive({
+    isPlaying: false,
+    currentTime: 0,
+    duration: 0,
+    currentSamples: 0,
+    totalSamples: 0,
+    sampleRate: 44100
+});
+
+let uiUpdateRafId: number | null = null;
+
 let currentSource: IAudioSource;
 let driver: IRenderLoop | null = null;
 let p5Instance: p5 | null = null;
@@ -61,6 +72,75 @@ function startDriver() {
 
     driver = new RealtimeLoop(currentSource, processor, whitener, visualizer, p5Instance);
     driver.start();
+
+    startUiLoop();
+}
+
+function startUiLoop() {
+    if (uiUpdateRafId) cancelAnimationFrame(uiUpdateRafId);
+
+    const loop = () => {
+        if (currentSource && currentSource.getCurrentTime) {
+            playbackState.currentTime = currentSource.getCurrentTime();
+            // isPlaying might be tracked inside source, but we can infer or rely on driver?
+            // actually FileAudioSource has isPlaying, but IAudioSource doesn't strictly enforce it public.
+            // But we added the methods.
+
+            // Just assume driver.isRunning() correlates, but for File source, play/pause is internal.
+            // We should trust the source if it updates.
+            // For now, let's update simple things.
+        }
+
+        // Update Metadata if possible
+        const meta = currentSource.getMetaInfo();
+        playbackState.duration = meta.duration || 0;
+        playbackState.sampleRate = meta.sampleRate;
+        playbackState.totalSamples = Math.floor((meta.duration || 0) * meta.sampleRate);
+        playbackState.currentSamples = Math.floor(playbackState.currentTime * meta.sampleRate);
+
+        uiUpdateRafId = requestAnimationFrame(loop);
+    };
+    loop();
+}
+
+// Controls
+export function togglePlayback() {
+    if (!currentSource) return;
+
+    // Check if playing
+    // We don't have a direct isPlaying property on IAudioSource, but we can check playbackState if we trust it,
+    // OR just try to cast to FileAudioSource
+    if (playbackState.isPlaying) {
+        pause();
+    } else {
+        play();
+    }
+}
+
+export function play() {
+    currentSource?.play?.();
+    playbackState.isPlaying = true;
+}
+
+export function pause() {
+    currentSource?.pause?.();
+    playbackState.isPlaying = false;
+}
+
+export function stop() {
+    currentSource?.stop?.();
+    playbackState.isPlaying = false;
+    playbackState.currentTime = 0;
+}
+
+export function seek(time: number) {
+    currentSource?.seek?.(time);
+    playbackState.currentTime = time;
+}
+
+export function skip(delta: number) {
+    const newTime = playbackState.currentTime + delta;
+    seek(newTime);
 }
 
 export async function switchSource(type: string) {

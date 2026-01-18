@@ -58,32 +58,6 @@ export class RealtimeLoop implements IRenderLoop {
         const snapshot = this.processor.compute(whitenedData);
 
         // 3. Draw
-        // p5 draw() is usually called by p5's internal loop. 
-        // Ideally, we should unify them.
-        // OPTION A: Use p5's draw() as the main loop. 
-        // OPTION B: Use this RAF as the main loop and call visualizer.draw() manually.
-        // Since we are using p5 in instance mode, we can disable p5's auto-loop (noLoop()) 
-        // and call redraw() or just draw directly if possible?
-        // Actually, p5 "draw" is special. 
-
-        // BETTER APPROACH for Realtime:
-        // Let p5 Handle the loop via `p.draw`.
-        // In `p.draw`, we ask the Driver "Give me the current state to draw".
-        // BUT, we defined "Driver" as the one controlling the loop.
-
-        // Let's compromise: 
-        // RealtimeLoop will NOT use RAF. instead, it provides an `update()` method 
-        // that p5 calls every frame.
-        // AND, for the "Offline" later, the OfflineLoop will control the flow.
-
-        // WAIT, the Architecture says:
-        // "RealtimeLoop: requestAnimationFrame using system clock"
-
-        // Let's stick to the architecture. RealtimeLoop drives the logic.
-        // But p5 has its own clearing/setup.
-        // We can just call `this.visualizer.draw(this.p5Instance, snapshot)` here.
-        // and in p5 sketch, we put `p.noLoop()`.
-
         this.visualizer.draw(this.p5Instance, snapshot);
 
         this.rafId = requestAnimationFrame(this.loop);

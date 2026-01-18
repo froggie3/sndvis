@@ -25,4 +25,11 @@ export interface IAudioSource {
      * Clean up resources.
      */
     disconnect(): void;
+
+    // Optional Playback Controls (mainly for FileAudioSource)
+    play?(): void;
+    pause?(): void;
+    stop?(): void;
+    seek?(time: number): void;
+    getCurrentTime?(): number;
 }

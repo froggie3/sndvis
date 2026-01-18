@@ -7,10 +7,18 @@
     <div class="ui-layer">
       <!-- Bottom Left Controls -->
       <div class="bottom-left">
-        <VisualizerSettingsControl class="control-block" />
-        <EnvelopeControl class="control-block" />
-        <SpectralControl class="control-block" />
-        <AudioSourceControl class="control-block" />
+        <transition name="slide-up">
+          <div v-show="showSettings" class="settings-container">
+            <VisualizerSettingsControl class="control-block" />
+            <EnvelopeControl class="control-block" />
+            <SpectralControl class="control-block" />
+            <AudioSourceControl class="control-block" />
+          </div>
+        </transition>
+        
+        <button class="master-toggle" @click="showSettings = !showSettings" title="Toggle Settings">
+          🔧
+        </button>
       </div>
     </div>
   </div>
@@ -22,6 +30,9 @@ import AudioSourceControl from './components/AudioSourceControl.vue';
 import SpectralControl from './components/SpectralControl.vue';
 import EnvelopeControl from './components/EnvelopeControl.vue';
 import VisualizerSettingsControl from './components/VisualizerSettingsControl.vue';
+import { ref } from 'vue';
+
+const showSettings = ref(true);
 </script>
 
 <style>
@@ -59,7 +70,54 @@ body {
   gap: 15px;
   pointer-events: auto;
   max-height: 90vh;
+  overflow: visible; /* Allow buttons popup if needed */
+}
+
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 80vh;
   overflow-y: auto;
+  padding-right: 5px; /* space for scrollbar */
+}
+
+.master-toggle {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 8px 12px;
+    backdrop-filter: blur(4px);
+    align-self: flex-start;
+    transition: background 0.2s;
+}
+.master-toggle:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* Transitions */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+  max-height: 80vh;
+  opacity: 1;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.settings-container::-webkit-scrollbar {
+  width: 6px;
+}
+.settings-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.3);
+  border-radius: 3px;
 }
 
 .control-block {
@@ -70,13 +128,10 @@ body {
     backdrop-filter: blur(5px);
 }
 
-/* Scrollbar styling for controls if window small */
+
+/* Clean up scrollbar on .bottom-left itself since we moved scrolling to inner container */
 .bottom-left::-webkit-scrollbar {
-  width: 6px;
-}
-.bottom-left::-webkit-scrollbar-thumb {
-  background-color: rgba(255,255,255,0.3);
-  border-radius: 3px;
+  display: none;
 }
 
 </style>

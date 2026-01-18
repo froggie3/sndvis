@@ -9,6 +9,8 @@ export class FileAudioSource implements IAudioSource {
 
     private tempBuffer: Float32Array;
     private isPlaying: boolean = false;
+    private startTime: number = 0; // Context time when playback started
+    private startOffset: number = 0; // Where in the buffer we started playing (seconds)
 
     constructor(size: number = 2048) {
         this.size = size;
@@ -34,7 +36,12 @@ export class FileAudioSource implements IAudioSource {
 
         try {
             const arrayBuffer = await file.arrayBuffer();
-            this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+            const decodedBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+
+            // Stop current if playing
+            this.stop();
+
+            this.audioBuffer = decodedBuffer;
             // Reset playback
             this.play();
         } catch (err) {
@@ -45,23 +52,72 @@ export class FileAudioSource implements IAudioSource {
 
     play() {
         if (!this.audioContext || !this.audioBuffer) return;
-
-        // Stop previous
-        if (this.sourceNode) {
-            try { this.sourceNode.stop(); } catch (e) { }
-            this.sourceNode.disconnect();
-        }
+        if (this.isPlaying) return;
 
         this.sourceNode = this.audioContext.createBufferSource();
         this.sourceNode.buffer = this.audioBuffer;
-        this.sourceNode.loop = true; // Loop for visualization convenience
+        this.sourceNode.loop = true;
 
-        // Connect Line: Source -> Analyser -> Destination (Speaker)
         this.sourceNode.connect(this.inputAnalyser!);
         this.inputAnalyser!.connect(this.audioContext.destination);
 
-        this.sourceNode.start(0);
+        // Resume from where we left off
+        this.startTime = this.audioContext.currentTime;
+        this.sourceNode.start(0, this.startOffset);
+
         this.isPlaying = true;
+    }
+
+    pause() {
+        if (!this.isPlaying || !this.sourceNode) return;
+
+        try {
+            this.sourceNode.stop();
+        } catch (e) { }
+
+        // Calculate where we stopped
+        const elapsed = this.audioContext!.currentTime - this.startTime;
+        this.startOffset = (this.startOffset + elapsed) % this.audioBuffer!.duration;
+
+        this.sourceNode.disconnect();
+        this.sourceNode = null;
+        this.isPlaying = false;
+    }
+
+    stop() {
+        this.pause();
+        this.startOffset = 0;
+    }
+
+    seek(time: number) {
+        if (!this.audioBuffer) return;
+
+        // Clamp time
+        time = Math.max(0, Math.min(time, this.audioBuffer.duration));
+
+        const wasPlaying = this.isPlaying;
+        if (wasPlaying) {
+            // Using pause() is safer as it handles disconnection and state reset
+            this.pause();
+        }
+
+        this.startOffset = time;
+
+        if (wasPlaying) {
+            // Restart immediately
+            this.play();
+        }
+    }
+
+    getCurrentTime(): number {
+        if (!this.audioContext || !this.audioBuffer) return 0;
+
+        if (this.isPlaying) {
+            const elapsed = this.audioContext.currentTime - this.startTime;
+            return (this.startOffset + elapsed) % this.audioBuffer.duration;
+        } else {
+            return this.startOffset;
+        }
     }
 
     getNextBuffer(): Float32Array {
