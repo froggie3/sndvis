@@ -10,7 +10,8 @@ export class BrightnessMapStrategy implements IColorStrategy {
     apply(p: p5, context: ColorContext, config: ButterflyVisualizerConfig): void {
         const { brightnessR, brightnessB, brightnessGScale } = config;
         const brightness = Math.min(255, context.adsrValue * brightnessGScale);
-        p.fill(brightnessR, brightness, brightnessB);
+        // Round to avoid caching explosion
+        p.fill(Math.round(brightnessR), Math.round(brightness), Math.round(brightnessB));
     }
 }
 
@@ -31,7 +32,8 @@ export class PhaseHueStrategy implements IColorStrategy {
         const sat = config.hueSaturation;
         const bri = Math.min(100, context.adsrValue * config.hueBrightnessScale);
 
-        p.fill(hue, sat, bri);
+        // Round to avoid caching explosion
+        p.fill(Math.round(hue), Math.round(sat), Math.round(bri));
     }
 }
 
@@ -61,6 +63,7 @@ export class FreqGradientStrategy implements IColorStrategy {
         // Original implementation didn't use ADSR for alpha in this mode, 
         // relying on circle size (controlled by ADSR) to hide silent nodes.
 
-        p.fill(finalHue, sat, bri);
+        // Round to avoid caching explosion
+        p.fill(Math.round(finalHue), Math.round(sat), Math.round(bri));
     }
 }
