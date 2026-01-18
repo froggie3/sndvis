@@ -1,4 +1,5 @@
 import type { IAudioSource, AudioSourceMetadata } from './IAudioSource.js';
+import { DEFAULT_FFT_SIZE } from '../domain/constants.js';
 
 export class MicrophoneSource implements IAudioSource {
     private size: number;
@@ -20,7 +21,7 @@ export class MicrophoneSource implements IAudioSource {
     private inputAnalyser: AnalyserNode | null = null;
     private tempBuffer: Float32Array;
 
-    constructor(size: number = 2048) {
+    constructor(size: number = DEFAULT_FFT_SIZE) {
         this.size = size;
         this.tempBuffer = new Float32Array(size);
     }
@@ -85,6 +86,16 @@ export class MicrophoneSource implements IAudioSource {
         // getFloatTimeDomainData returns the current waveform.
 
         return this.tempBuffer.slice(0, this.size);
+    }
+
+    resize(size: number): void {
+        this.size = size;
+        if (this.inputAnalyser) {
+            this.inputAnalyser.fftSize = Math.max(32, size);
+            this.tempBuffer = new Float32Array(this.inputAnalyser.fftSize);
+        } else {
+            this.tempBuffer = new Float32Array(size);
+        }
     }
 
     getMetaInfo(): AudioSourceMetadata {

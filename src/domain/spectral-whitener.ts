@@ -15,6 +15,10 @@ export class SpectralWhitener {
         this.amount = Math.max(0, Math.min(1, amount));
     }
 
+    getAmount(): number {
+        return this.amount;
+    }
+
     /**
      * Apply spectral whitening to the input buffer.
      * Returns a NEW buffer to avoid mutating the source data if reused elsewhere.

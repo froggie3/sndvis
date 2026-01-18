@@ -1,4 +1,5 @@
 import type { IAudioSource, AudioSourceMetadata } from './IAudioSource.js';
+import { DEFAULT_FFT_SIZE } from '../domain/constants.js';
 
 export class FileAudioSource implements IAudioSource {
     private size: number;
@@ -12,7 +13,7 @@ export class FileAudioSource implements IAudioSource {
     private startTime: number = 0; // Context time when playback started
     private startOffset: number = 0; // Where in the buffer we started playing (seconds)
 
-    constructor(size: number = 2048) {
+    constructor(size: number = DEFAULT_FFT_SIZE) {
         this.size = size;
         this.tempBuffer = new Float32Array(size);
     }
@@ -158,6 +159,16 @@ export class FileAudioSource implements IAudioSource {
         }
 
         return output;
+    }
+
+    resize(size: number): void {
+        this.size = size;
+        if (this.inputAnalyser) {
+            this.inputAnalyser.fftSize = Math.max(32, size);
+            this.tempBuffer = new Float32Array(this.inputAnalyser.fftSize);
+        } else {
+            this.tempBuffer = new Float32Array(size);
+        }
     }
 
     getMetaInfo(): AudioSourceMetadata {

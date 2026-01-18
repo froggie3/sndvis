@@ -12,11 +12,11 @@ import type { IAudioSource } from '../io/IAudioSource.js';
 import type { IRenderLoop } from '../io/IRenderLoop.js';
 import type { EnvelopeConfig } from '../domain/envelope-config.js';
 import type { ButterflyVisualizerConfig } from '../visualizer/config.js';
+import { DEFAULT_FFT_SIZE } from '../domain/constants.js';
 
 // Global State
-const N = 128;
-export const processor = new FFTProcessor(N);
-export const whitener = new SpectralWhitener(N);
+export let processor = new FFTProcessor(DEFAULT_FFT_SIZE);
+export let whitener = new SpectralWhitener(DEFAULT_FFT_SIZE);
 whitener.setAmount(0.6);
 
 export const visualizer = new ButterflyVisualizer();
@@ -25,6 +25,7 @@ export const visualizer = new ButterflyVisualizer();
 // Reactive State for UI
 export const appState = reactive({
     currentSourceType: 'test',
+    fftSize: DEFAULT_FFT_SIZE, // Default FFT Size
     isExporting: false,
     exportProgress: 0,
 });
@@ -59,7 +60,7 @@ export function initAudio(p: p5) {
 
     // Initial Setup
     // Default Source
-    currentSource = new TestSignalSource(N);
+    currentSource = new TestSignalSource(appState.fftSize);
 
     startDriver();
 }
@@ -151,14 +152,14 @@ export async function switchSource(type: string) {
 
     switch (type) {
         case 'mic':
-            currentSource = new MicrophoneSource(N);
+            currentSource = new MicrophoneSource(appState.fftSize);
             break;
         case 'file':
-            currentSource = new FileAudioSource(N);
+            currentSource = new FileAudioSource(appState.fftSize);
             break;
         case 'test':
         default:
-            currentSource = new TestSignalSource(N);
+            currentSource = new TestSignalSource(appState.fftSize);
             break;
     }
 
@@ -232,4 +233,35 @@ export function setEnvelopeConfig(cfg: EnvelopeConfig) {
 
 export function setVisualizerConfig(cfg: ButterflyVisualizerConfig) {
     visualizer.importSettings(cfg);
+}
+
+export async function updateFFTSize(newSize: number) {
+    appState.fftSize = newSize;
+
+    // 1. Re-initialize Processor and Whitener
+    const oldAmount = whitener.getAmount();
+    processor = new FFTProcessor(newSize);
+    whitener = new SpectralWhitener(newSize);
+    whitener.setAmount(oldAmount);
+
+    // 2. Update Source and Driver without full restart
+    if (currentSource) {
+        currentSource.resize(newSize);
+    }
+
+    // 3. Re-create Driver with NEW processor/whitener
+    // The driver (RealtimeLoop) uses the current source, but needs the NEW processor/whitener instances.
+    if (driver && p5Instance) {
+        const wasRunning = driver.isRunning();
+        driver.stop();
+
+        // Create new driver that points to the NEW exported processor/whitener
+        // (Note: it already uses the global exports if we pass them, 
+        //  but the previous RealtimeLoop instance might be holding old references)
+        driver = new RealtimeLoop(currentSource, processor, whitener, visualizer, p5Instance);
+
+        if (wasRunning) {
+            driver.start();
+        }
+    }
 }

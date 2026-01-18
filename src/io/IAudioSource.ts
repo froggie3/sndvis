@@ -22,6 +22,11 @@ export interface IAudioSource {
     getMetaInfo(): AudioSourceMetadata;
 
     /**
+     * Resize internal buffers (e.g. when FFT size changes).
+     */
+    resize(size: number): void;
+
+    /**
      * Clean up resources.
      */
     disconnect(): void;

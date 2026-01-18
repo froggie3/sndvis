@@ -1,4 +1,5 @@
 import type { IAudioSource, AudioSourceMetadata } from './IAudioSource.js';
+import { DEFAULT_FFT_SIZE } from '../domain/constants.js';
 
 export class TestSignalSource implements IAudioSource {
     private size: number;
@@ -7,7 +8,7 @@ export class TestSignalSource implements IAudioSource {
     private frequency: number = 2; // Default frequency (relative to N)
     private buffer: Float32Array;
 
-    constructor(size: number = 64, sampleRate: number = 44100) {
+    constructor(size: number = DEFAULT_FFT_SIZE, sampleRate: number = 44100) {
         this.size = size;
         this.sampleRate = sampleRate;
         this.buffer = new Float32Array(size);
@@ -45,6 +46,11 @@ export class TestSignalSource implements IAudioSource {
         }
 
         return this.buffer;
+    }
+
+    resize(size: number): void {
+        this.size = size;
+        this.buffer = new Float32Array(size);
     }
 
     getMetaInfo(): AudioSourceMetadata {
