@@ -58,6 +58,8 @@
         <label style="width: 60px;">Rotate:</label>
         <label><input type="radio" :value="0" v-model="cfg.rotation" @change="onCustomChange"> 0°</label>
         <label><input type="radio" :value="90" v-model="cfg.rotation" @change="onCustomChange"> 90°</label>
+        <label><input type="radio" :value="180" v-model="cfg.rotation" @change="onCustomChange"> 180°</label>
+        <label><input type="radio" :value="270" v-model="cfg.rotation" @change="onCustomChange"> 270°</label>
     </div>
     
     <div class="section-label">Stage Separation</div>

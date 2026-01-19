@@ -27,7 +27,7 @@ export interface ButterflyVisualizerConfig {
 
     // View Configuration
     selectedStageIndex: number; // -1 for All, 0..N for specific stage
-    rotation: 0 | 90; // 0 or 90 degrees
+    rotation: 0 | 90 | 180 | 270; // 0, 90, 180, 270 degrees
 }
 
 export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
