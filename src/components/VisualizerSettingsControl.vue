@@ -52,13 +52,31 @@
         <label>EndHue</label><input type="range" min="0" max="360" v-model.number="cfg.freqHueEnd" @input="onCustomChange"><span>{{ cfg.freqHueEnd }}</span>
     </div>
 
+    <!-- View Settings -->
+    <div class="section-label group">View</div>
+    <div class="row">
+        <label style="width: 60px;">Rotate:</label>
+        <label><input type="radio" :value="0" v-model="cfg.rotation" @change="onCustomChange"> 0°</label>
+        <label><input type="radio" :value="90" v-model="cfg.rotation" @change="onCustomChange"> 90°</label>
+    </div>
+    
+    <div class="section-label">Stage Separation</div>
+    <div class="stage-grid">
+        <label class="stage-item">
+            <input type="radio" :value="-1" v-model="cfg.selectedStageIndex" @change="onCustomChange"> All
+        </label>
+        <label v-for="s in availableStages" :key="s" class="stage-item">
+            <input type="radio" :value="s" v-model="cfg.selectedStageIndex" @change="onCustomChange"> S{{ s }}
+        </label>
+    </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { VIZ_PRESETS, type ButterflyVisualizerConfig } from '../visualizer/config';
-import { setVisualizerConfig } from '../logic/audioEngine';
+import { setVisualizerConfig, appState } from '../logic/audioEngine';
 
 const presets = VIZ_PRESETS;
 const selectedPresetName = ref(VIZ_PRESETS[0].name);
@@ -101,22 +119,37 @@ const hueRangeText = computed(() => {
 // Ensure init state helps engine (though engine defaults might match)
 setVisualizerConfig(cfg);
 
+// Dynamic Stages
+const availableStages = computed(() => {
+    // FFT Size -> Stages
+    // log2(128) = 7. Total stages = 7 + 1 = 8. (0..7)
+    const log2 = Math.log2(appState.fftSize);
+    const count = Math.floor(log2) + 1; // Corrected count
+    return Array.from({ length: count }, (_, i) => i);
+});
+
+// Watch for FFT size changes to reset selection if out of bounds
+watch(() => appState.fftSize, (newSize) => {
+    const maxIndex = Math.floor(Math.log2(newSize)); // max index is count-1, so log2
+    if (cfg.selectedStageIndex > maxIndex) {
+        cfg.selectedStageIndex = -1;
+        setVisualizerConfig(cfg);
+    }
+});
+
 </script>
 
 <style scoped>
 .control-panel {
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
-  color: white;
-  padding: 15px;
-  border-radius: 8px;
+  color: white; /* Removed background/padding duplicates if handled by App, but kept for standalone usage safety? No, App.vue has .control-block. VisualizerSettingsControl uses .control-panel. I will trust App.vue styles or sync them. For now, removing the problematic width/overflow. */
+  /* Remove fixed width and let App.vue handle it, OR set 100% to fill container */
+  /* User requested 15rem total width. I will handle that in App.vue for all panels. */
   display: flex;
   flex-direction: column;
-  width: 300px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  /* Removed box-shadow, width, max-height, overflow-y */
 }
 
-
+/* ... existing styles ... */
 
 .section-label {
     font-size: 0.85em; 
@@ -142,5 +175,19 @@ setVisualizerConfig(cfg);
     margin-top: 5px;
     padding-top: 5px;
     border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.stage-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.stage-item {
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
 }
 </style>

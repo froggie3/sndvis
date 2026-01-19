@@ -80,6 +80,7 @@ body {
   max-height: 80vh;
   overflow-y: auto;
   padding-right: 5px; /* space for scrollbar */
+  width: 23rem; /* Enforce fixed width for all controls */
 }
 
 .master-toggle {

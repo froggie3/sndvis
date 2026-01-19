@@ -24,6 +24,10 @@ export interface ButterflyVisualizerConfig {
     // FreqGradient_PhaseBrightness specific
     freqHueStart: number;
     freqHueEnd: number;
+
+    // View Configuration
+    selectedStageIndex: number; // -1 for All, 0..N for specific stage
+    rotation: 0 | 90; // 0 or 90 degrees
 }
 
 export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
@@ -42,7 +46,9 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         hueSaturation: 80,
         hueBrightnessScale: 100,
         freqHueStart: 240,
-        freqHueEnd: 0
+        freqHueEnd: 0,
+        selectedStageIndex: -1,
+        rotation: 0
     },
     {
         name: "Phase -> Hue",
@@ -58,7 +64,9 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         hueSaturation: 80,
         hueBrightnessScale: 80,
         freqHueStart: 240,
-        freqHueEnd: 0
+        freqHueEnd: 0,
+        selectedStageIndex: -1,
+        rotation: 0
     },
     {
         name: "Freq -> Cool/Warm, Phase -> Bri",
@@ -74,6 +82,8 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         hueSaturation: 90,
         hueBrightnessScale: 0,
         freqHueStart: 240, // Blue
-        freqHueEnd: 360    // Red (via Magenta)
+        freqHueEnd: 360,    // Red (via Magenta)
+        selectedStageIndex: -1,
+        rotation: 0
     }
 ];
