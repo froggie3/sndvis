@@ -10,7 +10,7 @@
     <div class="slider-grid">
       <label>Min</label><input type="range" min="0" max="20" v-model.number="cfg.minSize" @input="onCustomChange"><span>{{ cfg.minSize }}</span>
       <label>Max</label><input type="range" min="5" max="100" v-model.number="cfg.maxSize" @input="onCustomChange"><span>{{ cfg.maxSize }}</span>
-      <label>Scale</label><input type="range" min="1" max="50" v-model.number="cfg.sizeScale" @input="onCustomChange"><span>{{ cfg.sizeScale }}</span>
+      <label>Scale</label><input type="range" min="1" max="200" v-model.number="cfg.sizeScale" @input="onCustomChange"><span>{{ cfg.sizeScale }}</span>
     </div>
 
     <div class="section-label">Color</div>
@@ -52,7 +52,30 @@
         <label>EndHue</label><input type="range" min="0" max="360" v-model.number="cfg.freqHueEnd" @input="onCustomChange"><span>{{ cfg.freqHueEnd }}</span>
     </div>
 
-    <!-- View Settings -->
+    <div class="section-label">Signal Normalization</div>
+    <div class="row" style="flex-wrap: wrap;">
+        <label>Mode:</label>
+        <select v-model="cfg.normalizationMode" @change="onCustomChange">
+            <option value="NONE">None (Raw)</option>
+            <option value="LOG">Logarithmic</option>
+        </select>
+        
+        <div v-if="cfg.normalizationMode === 'LOG'" style="display:inline-flex; align-items:center; gap:5px; margin-left: 10px;">
+           <label>Base:</label>
+           <input type="number" v-model.number="cfg.logBase" min="2" max="100" style="width: 50px;" @input="onCustomChange">
+        </div>
+    </div>
+
+    <div class="section-label">Fractal Scaling</div>
+    <div class="row">
+        <label><input type="checkbox" v-model="cfg.useFractalSize" @change="onCustomChange"> Enabled</label>
+    </div>
+    <div v-if="cfg.useFractalSize" class="slider-grid group">
+         <label>Decay</label>
+         <input type="range" min="0.5" max="1.2" step="0.01" v-model.number="cfg.fractalDecay" @input="onCustomChange">
+         <span>{{ cfg.fractalDecay }}</span>
+    </div>
+
     <div class="section-label group">View</div>
     <div class="row">
         <label style="width: 60px;">Rotate:</label>

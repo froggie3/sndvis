@@ -1,4 +1,5 @@
 export type VisualizerColorMode = 'BrightnessMap' | 'PhaseHue' | 'FreqGradient_PhaseBrightness';
+export type NormalizationMode = 'NONE' | 'LOG';
 
 export interface ButterflyVisualizerConfig {
     name: string;
@@ -7,6 +8,14 @@ export interface ButterflyVisualizerConfig {
     minSize: number;
     maxSize: number;
     sizeScale: number;
+
+    // Normalization
+    normalizationMode: NormalizationMode;
+    logBase: number;
+
+    // Fractal
+    useFractalSize: boolean;
+    fractalDecay: number;
 
     // Color Configuration
     colorMode: VisualizerColorMode;
@@ -35,7 +44,11 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         name: "Default (Blue-ish)",
         minSize: 2,
         maxSize: 20,
-        sizeScale: 5,
+        sizeScale: 50,
+        normalizationMode: 'LOG',
+        logBase: 10,
+        useFractalSize: true,
+        fractalDecay: 0.9,
         colorMode: 'BrightnessMap',
         brightnessR: 100,
         brightnessB: 255,
@@ -54,7 +67,11 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         name: "Phase -> Hue",
         minSize: 2,
         maxSize: 20,
-        sizeScale: 5,
+        sizeScale: 50,
+        normalizationMode: 'LOG',
+        logBase: 10,
+        useFractalSize: true,
+        fractalDecay: 0.9,
         colorMode: 'PhaseHue',
         brightnessR: 100,
         brightnessB: 255,
@@ -72,7 +89,11 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         name: "Freq -> Cool/Warm, Phase -> Bri",
         minSize: 2,
         maxSize: 20,
-        sizeScale: 5,
+        sizeScale: 50,
+        normalizationMode: 'LOG',
+        logBase: 10,
+        useFractalSize: true,
+        fractalDecay: 0.9,
         colorMode: 'FreqGradient_PhaseBrightness',
         brightnessR: 0,
         brightnessB: 0,

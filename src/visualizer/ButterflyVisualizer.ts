@@ -37,21 +37,40 @@ abstract class BaseButterflyRenderer {
     ) {
         const { stages, nodeStates, config, envConfig, colorStrategy } = ctx;
         const N = stages[0].length;
-        const { minSize, maxSize, sizeScale } = config;
+        const { minSize, maxSize, sizeScale, normalizationMode, logBase, useFractalSize, fractalDecay } = config;
 
-        // 1. Calculate Target Intensity
+        // 1. Calculate Raw Magnitude
         const complex = stages[s][i];
-        const rawMag = Math.sqrt(complex.re * complex.re + complex.im * complex.im);
+        let rawMag = Math.sqrt(complex.re * complex.re + complex.im * complex.im);
 
-        // 2. ADSR Update
+        // 2. Normalization Strategy
+        let targetMag = rawMag;
+        switch (normalizationMode) {
+            case 'LOG':
+                // Logarithmic: log(1 + raw) or similar
+                // base usually 10 or e.
+                // We use logBase from config.
+                // Adding 1 to avoid log(0) and keep positive.
+                if (targetMag > 0) {
+                    targetMag = Math.log(1 + rawMag) / Math.log(logBase);
+                }
+                break;
+            case 'NONE':
+            default:
+                targetMag = rawMag;
+                break;
+        }
+
+        // 3. ADSR Update (on the NORMALIZED value)
         let current = nodeStates[s][i];
 
-        if (rawMag > current) {
+        if (targetMag > current) {
             const factor = 1.0 - Math.min(0.99, envConfig.attackTime);
-            current += (rawMag - current) * factor;
+            current += (targetMag - current) * factor;
         } else {
-            const diff = current - rawMag;
-            if (diff > 0.0001) {
+            const diff = current - targetMag;
+            // Lower threshold for update to stop micro-updates
+            if (diff > 0.000001) {
                 const shape = Math.max(0.1, envConfig.curveShape);
                 const releaseBase = 1.0 - Math.min(0.999, envConfig.releaseTime);
                 let factor = Math.pow(diff, shape - 1.0);
@@ -60,22 +79,43 @@ abstract class BaseButterflyRenderer {
                 if (decay > diff) decay = diff;
                 current -= decay;
             } else {
-                current = rawMag;
+                current = targetMag;
             }
         }
 
         nodeStates[s][i] = current;
 
-        // 3. Visualization
-        const size = Math.min(maxSize, minSize + current * sizeScale);
+        // 4. Fractal Scaling
+        let fractalFactor = 1.0;
+        if (useFractalSize) {
+            fractalFactor = Math.pow(fractalDecay, s);
+        }
+
+        // 5. Calculate Final Size
+        // Size = Base + (NormalizedValue * Scale * FractalFactor)
+        // We apply fractal factor to the dynamic part usually, or the whole size?
+        // User spec: "奧の段...ほど円を小さく"
+        // Let's apply to the dynamic component primarily to keep 'minSize' as a baseline visibility,
+        // OR apply to the whole thing.
+        // If we apply to whole size, it shrinks everything including minSize.
+        // Let's apply to the gain part first.
+        // Actually, if minSize is constant, deep nodes overlap.
+        // It's probably better to scale the whole effective visual footprint, but let's stick to user spec "currentVal に...掛けて".
+        // Spec: "currentVal に sizeScale と scaleFactor を掛けて描画"
+        const size = Math.min(maxSize, minSize + current * sizeScale * fractalFactor);
 
         p.noStroke();
 
         // Color Strategy Apply
+        // Note: Strategy might use rawMag or current.
+        // To be consistent with visual size, we should probably pass 'current' (which is normalized now).
+        // But color strategies might rely on absolute values?
+        // Usually color mapping needs minimal tweaking, but let's pass the 'current' as adsrValue.
+        // It is now Normalized ADSR Value.
         colorStrategy.apply(p, {
             complex,
-            magnitude: rawMag,
-            adsrValue: current,
+            magnitude: rawMag, // Raw mag preserved for physics/color logic if needed
+            adsrValue: current, // This is now Normalized & ADSR'd
             index: i,
             total: N,
             stageIndex: s
