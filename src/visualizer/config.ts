@@ -1,4 +1,4 @@
-export type VisualizerColorMode = 'BrightnessMap' | 'PhaseHue' | 'FreqGradient_PhaseBrightness';
+export type VisualizerColorMode = 'PhaseHue' | 'FreqGradient_PhaseBrightness';
 export type NormalizationMode = 'NONE' | 'LOG';
 
 export interface ButterflyVisualizerConfig {
@@ -20,11 +20,6 @@ export interface ButterflyVisualizerConfig {
     // Color Configuration
     colorMode: VisualizerColorMode;
 
-    // BrightnessMap specific
-    brightnessR: number;
-    brightnessB: number;
-    brightnessGScale: number; // Multiplier for magnitude to get Green component
-
     hueOffset: number;   // 0-360
     hueRangeRatio: number; // -1.0 to 1.0 (Mapping expansion/contraction)
     hueSaturation: number; // 0-100
@@ -42,22 +37,18 @@ export interface ButterflyVisualizerConfig {
 export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
     {
         name: "Default (Blue-ish)",
-        minSize: 2,
-        maxSize: 20,
-        sizeScale: 50,
+        minSize: 1,
+        maxSize: 100,
+        sizeScale: 84,
         normalizationMode: 'LOG',
         logBase: 10,
         useFractalSize: true,
         fractalDecay: 0.9,
-        colorMode: 'BrightnessMap',
-        brightnessR: 100,
-        brightnessB: 255,
-        brightnessGScale: 50,
-        // Unused
-        hueOffset: 0,
-        hueRangeRatio: 1.0,
+        colorMode: 'PhaseHue',
+        hueOffset: 180,
+        hueRangeRatio: 0.1,
         hueSaturation: 80,
-        hueBrightnessScale: 100,
+        hueBrightnessScale: 200,
         freqHueStart: 240,
         freqHueEnd: 0,
         selectedStageIndex: -1,
@@ -73,9 +64,6 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         useFractalSize: true,
         fractalDecay: 0.9,
         colorMode: 'PhaseHue',
-        brightnessR: 100,
-        brightnessB: 255,
-        brightnessGScale: 50,
         hueOffset: 0,
         hueRangeRatio: 1.0,
         hueSaturation: 80,
@@ -95,9 +83,6 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         useFractalSize: true,
         fractalDecay: 0.9,
         colorMode: 'FreqGradient_PhaseBrightness',
-        brightnessR: 0,
-        brightnessB: 0,
-        brightnessGScale: 0,
         hueOffset: 0,
         hueRangeRatio: 1.0,
         hueSaturation: 90,

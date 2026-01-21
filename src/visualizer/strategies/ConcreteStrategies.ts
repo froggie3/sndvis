@@ -2,19 +2,6 @@ import type p5 from 'p5';
 import type { ButterflyVisualizerConfig } from '../config.js';
 import type { IColorStrategy, ColorContext } from './IColorStrategy.js';
 
-export class BrightnessMapStrategy implements IColorStrategy {
-    setup(p: p5, _config: ButterflyVisualizerConfig): void {
-        p.colorMode(p.RGB, 255);
-    }
-
-    apply(p: p5, context: ColorContext, config: ButterflyVisualizerConfig): void {
-        const { brightnessR, brightnessB, brightnessGScale } = config;
-        const brightness = Math.min(255, context.adsrValue * brightnessGScale);
-        // Round to avoid caching explosion
-        p.fill(Math.round(brightnessR), Math.round(brightness), Math.round(brightnessB));
-    }
-}
-
 export class PhaseHueStrategy implements IColorStrategy {
     setup(p: p5, _config: ButterflyVisualizerConfig): void {
         p.colorMode(p.HSB, 360, 100, 100, 100);
