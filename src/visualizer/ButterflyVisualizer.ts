@@ -47,9 +47,6 @@ abstract class BaseButterflyRenderer {
         let targetMag = rawMag;
         switch (normalizationMode) {
             case 'LOG':
-                // Logarithmic: log(1 + raw) or similar
-                // base usually 10 or e.
-                // We use logBase from config.
                 // Adding 1 to avoid log(0) and keep positive.
                 if (targetMag > 0) {
                     targetMag = Math.log(1 + rawMag) / Math.log(logBase);
@@ -106,16 +103,10 @@ abstract class BaseButterflyRenderer {
 
         p.noStroke();
 
-        // Color Strategy Apply
-        // Note: Strategy might use rawMag or current.
-        // To be consistent with visual size, we should probably pass 'current' (which is normalized now).
-        // But color strategies might rely on absolute values?
-        // Usually color mapping needs minimal tweaking, but let's pass the 'current' as adsrValue.
-        // It is now Normalized ADSR Value.
         colorStrategy.apply(p, {
             complex,
-            magnitude: rawMag, // Raw mag preserved for physics/color logic if needed
-            adsrValue: current, // This is now Normalized & ADSR'd
+            magnitude: rawMag,
+            adsrValue: current,
             index: i,
             total: N,
             stageIndex: s
@@ -223,64 +214,16 @@ class MultiStageRenderer extends BaseButterflyRenderer {
                 alignX = p.CENTER;
                 alignY = p.BOTTOM;
             } else if (rotation === 90) {
-                // screen X is fixed (near left), screen Y varies with stage
-                // Coord transformation:
-                // Canvas(x, y) = (stagePos, something) -> Screen?
-                // Visualizer puts stages along X in its local space.
-                // Rot 90: Local X becomes Screen Y (down). Local Y becomes Screen X (left <- wait, 90 clockwise)
-                // Let's analyze 90 deg again: translate(w,0), rotate(90).
-                // loc(x,y) -> screen(w-y, x) ???
-                // Wait, p5 rotation logic:
-                // 90deg: x->y, y->-x.
-                // translate(w,0): new(0,0) is at top-right. x-axis points down, y-axis points left.
-                // So stage index (along local X) goes DOWN the screen.
-                // We want text to be at "bottom" relative to the graph, which is left side of screen?
-                // Existing 90 logic: p.text(..., 15, screenY) where screenY = getX(s).
-                // This means '15' is Screen X (left side) and getX(s) is Screen Y.
-                // That matches "stages go down".
-
                 labelX = 15;
                 labelY = getX(stgIdx);
                 alignX = p.LEFT;
                 alignY = p.CENTER;
             } else if (rotation === 180) {
-                // translate(w, h), rotate(180).
-                // x -> -x, y -> -y.
-                // stage axis (local X) goes left.
-                // "bottom" of graph (local Y max) is top of screen (Screen Y=0).
-                // We want text at Screen Y = 15 (top).
-                // Screen X: varies.
-                // geometric X for stage s: getX(s). in screen: w - getX(s) ?
-                // Let's just use the fact that we draw OUTSIDE the push/pop of rotation.
-                // Wait, drawLabels *draws* assuming screen coords? No, it uses 'p' which is global?
-                // drawLabels is called *after* p.pop(). So p is in Identity transform (screen coords).
-                // But getX(s) returns coordinates in the Local Space of the visualizer (0..CanvasWidth).
-
-                // Rotation 0: ScreenX = LocalX = getX(s). ScreenY = Height - 15.
-                // Rotation 90: ScreenY = LocalX = getX(s). ScreenX = 15. (Stages run top-to-bottom)
-                // Rotation 180: Stages run right-to-left.
-                //   Local origin is Top-Right of screen, X goes left.
-                //   Visualizer width W. Stage 0 at marginX. Stage N at W-margin.
-                //   Screen X for Local X: W - LocalX.
-                //   "Bottom" of visualizer is Local Y=H. Screen coords: Top (Y=0).
-                //   So Label Y = 15.
-
                 labelX = width - getX(stgIdx);
                 labelY = 15;
                 alignX = p.CENTER;
                 alignY = p.TOP;
             } else if (rotation === 270) {
-                // translate(0, h), rotate(-90).
-                // x -> y, y -> -x.
-                // Stages run bottom-to-top.
-                // Local X becomes Screen Y (up).
-                // Local Y becomes Screen X (right).
-                // Origin (0,h) is Bottom-Left.
-                // Local X axis goes Up.
-                // Screen Y = h - LocalX.
-                // "Bottom" of visualizer (Local Y=H) is Right side of screen.
-                // So Label X = width - 15.
-
                 labelX = width - 15;
                 labelY = height - getX(stgIdx);
                 alignX = p.RIGHT;
@@ -350,57 +293,22 @@ class SingleStageRenderer extends BaseButterflyRenderer {
         let alignX: any = p.CENTER;
         let alignY: any = p.BOTTOM;
 
-
-        // NOTE: In SingleStage, 'centerX' is the coordinate in the LOCAL transformed space where nodes are drawn.
-        // It's calculated *based on transformed dimensions*.
-        // However, we are now outside the transform (p.pop called).
-        // So we need Screen Coords.
-
-        // SingleStageRenderer always draws nodes at the "center of the visual area" along the non-stage axis.
-        // And the stage axis doesn't exist spatially, it's just one stage.
-        // In MultiStage layout, we used getX(s) to find the stage line.
-        // Here, the nodes are at local coord 'centerX' (which is half the trans-width).
-        // Let's trace 'centerX':
-        // Rot 0: canvasWidth=width. centerX=width/2. ScreenX=width/2.
-        // Rot 90: canvasWidth=height. centerX=height/2. ScreenY=height/2. ScreenX?? 
-        // SingleStage uses:  this.drawNode(p, s, i, centerX, y, ctx);
-        //   where 'y' is along the node-axis (Local Y).
-        //   'centerX' is along the stage-axis (Local X).
-        // Effectively it draws a vertical line of nodes in the middle of Local Space.
-
         if (rotation === 0) {
-            // Local X = width/2. Local Y varies.
-            // Screen X = width/2.
             labelX = width / 2;
             labelY = height - 15;
             alignX = p.CENTER;
             alignY = p.BOTTOM;
         } else if (rotation === 90) {
-            // Local X = height/2 (vertical center of unrotated key).
-            // Rotated 90: Local X axis points Down. 
-            // The line of nodes is at LocalX = height/2.
-            // Screen Y = height/2.
-            // We want label at "bottom" of Local Y, which is Left of Screen.
             labelX = 15;
             labelY = height / 2;
             alignX = p.LEFT;
             alignY = p.CENTER;
         } else if (rotation === 180) {
-            // Local X = width/2.
-            // Rotated 180: Local X axis points Left.
-            // Screen X = width - LocalX = width/2.
-            // Local Y axis points Up (Screen Y 0).
-            // We want label at Top of Screen.
             labelX = width / 2;
             labelY = 15;
             alignX = p.CENTER;
             alignY = p.TOP;
         } else if (rotation === 270) {
-            // Local X = height/2.
-            // Rotated 270: Local X axis points Up.
-            // Screen Y = height - LocalX = height/2.
-            // Local Y axis points Right.
-            // We want label at Right of Screen.
             labelX = width - 15;
             labelY = height / 2;
             alignX = p.RIGHT;

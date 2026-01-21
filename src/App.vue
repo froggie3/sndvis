@@ -15,7 +15,7 @@
             <AudioSourceControl class="control-block" />
           </div>
         </transition>
-        
+
         <transition name="fade">
           <button v-show="settingsIconVisible" class="master-toggle" @click="toggleSettings" title="Toggle Settings">
             🔧
@@ -41,7 +41,7 @@ let hideTimer: number | undefined;
 function resetHideTimer() {
   settingsIconVisible.value = true;
   if (hideTimer) clearTimeout(hideTimer);
-  
+
   // If settings are open, do not auto-hide
   if (showSettings.value) return;
 
@@ -54,26 +54,9 @@ function onCanvasClick(e: MouseEvent) {
   // Ignore clicks on UI controls
   if ((e.target as Element).closest('.bottom-left')) return;
 
-  // If settings panel is open, clicking canvas usually implies closing it or doing nothing.
-  // Requirement focus is "Toggle Settings Icon".
-  // If panel is open, we can't hide icon.
-  // Use behavior: If panel is open, Close Panel (and hide icon?). 
-  // Or just ignore? 
-  // Let's assume "Clicking screen" means "I want to see/hide the icon" (when panel is closed).
-  
+  // See/hide the icon on clicking screen (when panel is closed)
   if (showSettings.value) {
-      // Optional: Close settings if clicking outside? 
-      // User didn't ask for this specifically, but "Toggle Icon" implies managing visibility.
-      // If I hide the icon, I should probably close the settings too?
-      // Let's toggle the *Panel* off if it's open?
-      // The prompt says "Toggle Settings *Icon*".
-      // Let's stick to: If panel closed, toggle icon.
-      // If panel open, do nothing? Or maybe close panel?
-      // "Clicking screen immediately toggles [Icon] visibility".
-      // If Panel Open, Icon Visible. correct?
-      // If I click, I want Icon Hidden. But Icon Hidden implies Panel Closed.
-      // So: Close Panel AND Hide Icon.
-      
+      // Close Panel AND Hide Icon.
       showSettings.value = false;
       settingsIconVisible.value = false;
       if (hideTimer) clearTimeout(hideTimer);
