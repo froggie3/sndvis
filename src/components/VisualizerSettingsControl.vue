@@ -173,11 +173,10 @@ const availableStages = computed(() => {
 watch(() => appState.fftSize, (newSize) => {
     const maxIndex = Math.floor(Math.log2(newSize)); 
     if (cfg.selectedStageIndex > maxIndex) {
-        // If out of bounds, reset.
+        // If out of bounds, clamp to maxIndex.
         // For Multi, -1 is fine.
-        // For Single, we should probably reset to 0 or maxIndex.
         if (cfg.selectedStageIndex !== -1) {
-            cfg.selectedStageIndex = 0;
+            cfg.selectedStageIndex = maxIndex;
             setVisualizerConfig(cfg);
         }
     }
