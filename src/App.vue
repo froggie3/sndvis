@@ -22,6 +22,13 @@
           </button>
         </transition>
       </div>
+
+      <!-- Center Overlay for Selector -->
+       <transition name="fade">
+          <div v-show="settingsIconVisible" class="center-overlay">
+             <VisualizerSelector />
+          </div>
+       </transition>
     </div>
   </div>
 </template>
@@ -32,6 +39,7 @@ import AudioSourceControl from './components/AudioSourceControl.vue';
 import SpectralControl from './components/SpectralControl.vue';
 import EnvelopeControl from './components/EnvelopeControl.vue';
 import VisualizerSettingsControl from './components/VisualizerSettingsControl.vue';
+import VisualizerSelector from './components/VisualizerSelector.vue';
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 
 const showSettings = ref(true);
@@ -51,8 +59,11 @@ function resetHideTimer() {
 }
 
 function onCanvasClick(e: MouseEvent) {
-  // Ignore clicks on UI controls
-  if ((e.target as Element).closest('.bottom-left')) return;
+  // Ignore clicks on UI controls, but keep UI alive
+  if ((e.target as Element).closest('.bottom-left') || (e.target as Element).closest('.center-overlay')) {
+      resetHideTimer();
+      return;
+  }
 
   // See/hide the icon on clicking screen (when panel is closed)
   if (showSettings.value) {
@@ -201,5 +212,15 @@ body {
 .bottom-left::-webkit-scrollbar {
   display: none;
 }
+
+.center-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto; /* Allow interaction */
+  z-index: 20;
+}
+
 
 </style>

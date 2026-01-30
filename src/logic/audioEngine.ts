@@ -14,13 +14,39 @@ import type { EnvelopeConfig } from '../domain/envelope-config.js';
 import type { ButterflyVisualizerConfig } from '../visualizer/config.js';
 import { DEFAULT_FFT_SIZE } from '../domain/constants.js';
 
+import { DummyVisualizer } from '../visualizer/DummyVisualizer.js';
+import { VisualizerManager } from '../visualizer/VisualizerManager.js';
+
 // Global State
 export let processor = new FFTProcessor(DEFAULT_FFT_SIZE);
 export let whitener = new SpectralWhitener(DEFAULT_FFT_SIZE);
 whitener.setAmount(0.6);
 
-export const visualizer = new ButterflyVisualizer();
-// We might want to make visualizer config reactive or expose it via a store
+// Visualizer Manager & Instances
+export const visualizerManager = new VisualizerManager();
+
+// Create instances
+const vizMulti = new ButterflyVisualizer();
+// Configure Multi Default
+const multiCfg = vizMulti.getSettings();
+multiCfg.selectedStageIndex = -1; // Ensure Multi
+vizMulti.importSettings(multiCfg);
+
+const vizSingle = new ButterflyVisualizer();
+// Configure Single Default
+const singleCfg = vizSingle.getSettings();
+singleCfg.selectedStageIndex = 0; // Default to Stage 0
+vizSingle.importSettings(singleCfg);
+
+const vizDummy = new DummyVisualizer();
+
+// Register
+visualizerManager.register('Butterfly (Multi)', vizMulti);
+visualizerManager.register('Butterfly (Single)', vizSingle);
+visualizerManager.register('Dummy', vizDummy);
+
+// Export generic interface for loops
+export const visualizer = visualizerManager;
 
 // Reactive State for UI
 export const appState = reactive({
@@ -232,7 +258,10 @@ export function setEnvelopeConfig(cfg: EnvelopeConfig) {
 }
 
 export function setVisualizerConfig(cfg: ButterflyVisualizerConfig) {
-    visualizer.importSettings(cfg);
+    const current = visualizerManager.get(visualizerManager.state.currentName);
+    if (current && 'importSettings' in current) {
+        (current as ButterflyVisualizer).importSettings(cfg);
+    }
 }
 
 export async function updateFFTSize(newSize: number) {
