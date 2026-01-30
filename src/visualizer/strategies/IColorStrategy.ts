@@ -1,5 +1,5 @@
 import type p5 from 'p5';
-import type { ButterflyVisualizerConfig } from '../config.js';
+import type { ColorCapableConfig } from '../config.js';
 
 export interface ColorContext {
     complex: { re: number, im: number };
@@ -11,6 +11,6 @@ export interface ColorContext {
 }
 
 export interface IColorStrategy {
-    setup(p: p5, config: ButterflyVisualizerConfig): void;
-    apply(p: p5, context: ColorContext, config: ButterflyVisualizerConfig): void;
+    setup(p: p5, config: ColorCapableConfig): void;
+    apply(p: p5, context: ColorContext, config: ColorCapableConfig): void;
 }

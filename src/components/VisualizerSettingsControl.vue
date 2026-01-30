@@ -2,8 +2,70 @@
   <div class="control-panel">
     <strong>Visualizer Settings</strong>
     
-    <div v-if="currentVizName === 'Dummy'" class="dummy-msg">
-        No settings available for Dummy Visualizer.
+    <div v-if="isFinalStageMode">
+        <select v-model="selectedGenericPresetName" @change="onGenericPresetChange" style="margin-bottom: 5px; width: 100%;">
+            <option v-for="p in finalStagePresets" :key="p.name" :value="p.name">{{ p.name }}</option>
+            <option value="Custom">Custom</option>
+        </select>
+
+        <div class="section-label">Display Mode</div>
+        <div class="row">
+             <label><input type="radio" value="REAL" v-model="finalCfg.showMode" @change="onFinalCustomChange"> Real</label>
+             <label><input type="radio" value="IMAG" v-model="finalCfg.showMode" @change="onFinalCustomChange"> Imag</label>
+             <label><input type="radio" value="BOTH" v-model="finalCfg.showMode" @change="onFinalCustomChange"> Both</label>
+        </div>
+
+        <div class="section-label">Scaling Mode</div>
+        <div class="row">
+            <select v-model="finalCfg.scaleMode" @change="onFinalCustomChange">
+                <option value="LINEAR">Linear</option>
+                <option value="LOG">Logarithmic</option>
+                <option value="MEL">Mel Scale</option>
+                <option value="CUSTOM">Custom (Exp)</option>
+            </select>
+        </div>
+        <div v-if="finalCfg.scaleMode === 'CUSTOM'" class="row">
+             <label>Exp:</label>
+             <input type="number" step="0.1" v-model.number="finalCfg.customExponent" @change="onFinalCustomChange" style="width: 50px;">
+        </div>
+
+        <div class="section-label">Appearance</div>
+        <div class="slider-grid">
+             <label>Min</label><input type="range" min="0" max="20" v-model.number="finalCfg.minSize" @input="onFinalCustomChange"><span>{{ finalCfg.minSize }}</span>
+             <label>Max</label><input type="range" min="5" max="100" v-model.number="finalCfg.maxSize" @input="onFinalCustomChange"><span>{{ finalCfg.maxSize }}</span>
+             <label>Scale</label><input type="range" min="0.1" max="5.0" step="0.1" v-model.number="finalCfg.sizeScale" @input="onFinalCustomChange"><span>{{ finalCfg.sizeScale }}</span>
+        </div>
+        
+        <div class="row" style="margin-top: 5px;">
+             <!-- Removed showFrequencyLabels checkbox as it is now implicit/grid -->
+        </div>
+
+        <div class="section-label">Color</div>
+        <div class="row">
+            <label>Mode:</label>
+            <select v-model="finalCfg.colorMode" @change="onFinalCustomChange">
+                <option value="PhaseHue">Phase Hue</option>
+                <option value="FreqGradient_PhaseBrightness">Freq Gradient</option>
+            </select>
+        </div>
+
+        <!-- Mode: Saturation Shared -->
+        <div v-if="finalCfg.colorMode === 'PhaseHue' || finalCfg.colorMode === 'FreqGradient_PhaseBrightness'" class="slider-grid group">
+            <label>Sat</label><input type="range" min="0" max="100" v-model.number="finalCfg.hueSaturation" @input="onFinalCustomChange"><span>{{ finalCfg.hueSaturation }}</span>
+        </div>
+
+        <!-- Mode: Hue -->
+        <div v-if="finalCfg.colorMode === 'PhaseHue'" class="slider-grid group">
+            <label>Offset</label><input type="range" min="0" max="360" v-model.number="finalCfg.hueOffset" @input="onFinalCustomChange"><span>{{ finalCfg.hueOffset }}°</span>
+            <label>Range</label><input type="range" min="-1" max="1" step="0.01" v-model.number="finalCfg.hueRangeRatio" @input="onFinalCustomChange"><span>{{ finalCfg.hueRangeRatio }}</span>
+            <label>BriScale</label><input type="range" min="0" max="255" v-model.number="finalCfg.hueBrightnessScale" @input="onFinalCustomChange"><span>{{ finalCfg.hueBrightnessScale }}</span>
+        </div>
+
+        <!-- Mode: Freq -->
+        <div v-if="finalCfg.colorMode === 'FreqGradient_PhaseBrightness'" class="slider-grid group">
+            <label>StartHue</label><input type="range" min="0" max="360" v-model.number="finalCfg.freqHueStart" @input="onFinalCustomChange"><span>{{ finalCfg.freqHueStart }}</span>
+            <label>EndHue</label><input type="range" min="0" max="360" v-model.number="finalCfg.freqHueEnd" @input="onFinalCustomChange"><span>{{ finalCfg.freqHueEnd }}</span>
+        </div>
     </div>
 
     <!-- Butterfly Controls (Multi or Single) -->
@@ -110,12 +172,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue';
-import { VIZ_PRESETS, type ButterflyVisualizerConfig } from '../visualizer/config';
+import { VIZ_PRESETS, type ButterflyVisualizerConfig, FINAL_STAGE_PRESETS, type FinalStageVisualizerConfig } from '../visualizer/config';
 import { setVisualizerConfig, appState, visualizerManager } from '../logic/audioEngine';
 
 const currentVizName = computed(() => visualizerManager.state.currentName);
 const isMultiMode = computed(() => currentVizName.value.includes('(Multi)'));
 const isSingleMode = computed(() => currentVizName.value.includes('(Single)'));
+const isFinalStageMode = computed(() => currentVizName.value.includes('Spectrum'));
 
 const showStageControls = computed(() => isMultiMode.value || isSingleMode.value);
 
@@ -208,6 +271,53 @@ watch(currentVizName, () => {
     } else if (isSingleMode.value && cfg.selectedStageIndex === -1) {
         cfg.selectedStageIndex = 0;
         setVisualizerConfig(cfg);
+    }
+});
+
+// Final Stage Logic
+const finalStagePresets = FINAL_STAGE_PRESETS;
+const selectedGenericPresetName = ref(FINAL_STAGE_PRESETS[0].name);
+const finalCfg = reactive<FinalStageVisualizerConfig>({ ...FINAL_STAGE_PRESETS[0] });
+
+function onGenericPresetChange() {
+    // Check if it's Final Stage
+    if (isFinalStageMode.value) {
+        const p = FINAL_STAGE_PRESETS.find(x => x.name === selectedGenericPresetName.value);
+        if (p) {
+            Object.assign(finalCfg, p);
+            // setVisualizerConfig uses partial, but our function expects Butterfly Config type due to TS?
+            // Wait, setVisualizerConfig in audioEngine maps to `importSettings`.
+            // We need to cast or make setVisualizerConfig generic.
+            // For now, I will use:
+            _setGenericConfig(p);
+        }
+    }
+}
+
+function onFinalCustomChange() {
+    selectedGenericPresetName.value = "Custom";
+    _setGenericConfig({ ...finalCfg, name: 'Custom' });
+}
+
+function _setGenericConfig(config: any) {
+    // We can use the exported helper or direct access
+    // The exported setVisualizerConfig is typed to ButterflyVisualizerConfig.
+    // Let's rely on JS dynamic nature or fix the type in audioEngine if possible.
+    // Actually, let's just use `setVisualizerConfig` and cast to any if needed or update audioEngine later.
+    // But since I can't update multiple files easily if I didn't plan it, 
+    // I can just cast here.
+    setVisualizerConfig(config as any);
+}
+
+// Watch for switch to sync Final Stage config
+watch(currentVizName, () => {
+    if (isFinalStageMode.value) {
+         const current = visualizerManager.get(currentVizName.value);
+         if (current && 'getSettings' in current) {
+             const newCfg = (current as any).getSettings();
+             Object.assign(finalCfg, newCfg);
+             selectedGenericPresetName.value = newCfg.name || 'Custom';
+         }
     }
 });
 

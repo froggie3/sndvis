@@ -1,7 +1,39 @@
 export type VisualizerColorMode = 'PhaseHue' | 'FreqGradient_PhaseBrightness';
 export type NormalizationMode = 'NONE' | 'LOG';
+export type ScaleMode = 'LINEAR' | 'LOG' | 'MEL' | 'CUSTOM';
+export type ShowMode = 'REAL' | 'IMAG' | 'BOTH';
 
-export interface ButterflyVisualizerConfig {
+export interface ColorCapableConfig {
+    colorMode: VisualizerColorMode;
+    hueOffset: number;   // 0-360
+    hueRangeRatio: number; // -1.0 to 1.0 (Mapping expansion/contraction)
+    hueSaturation: number; // 0-100
+    hueBrightnessScale: number; // Multiplier for magnitude to get Brightness
+    // FreqGradient_PhaseBrightness specific
+    freqHueStart: number;
+    freqHueEnd: number;
+}
+
+export interface FinalStageVisualizerConfig extends ColorCapableConfig {
+    name: string;
+
+    // View
+    showMode: ShowMode; // Real, Imag, or Both
+
+    // Scaling
+    scaleMode: ScaleMode;
+    customExponent: number; // For Custom Scale
+
+    // Grid
+    gridBaseFreq: number; // default 20
+
+    // Appearance
+    minSize: number;
+    maxSize: number;
+    sizeScale: number;
+}
+
+export interface ButterflyVisualizerConfig extends ColorCapableConfig {
     name: string;
 
     // Size Configuration
@@ -16,18 +48,6 @@ export interface ButterflyVisualizerConfig {
     // Fractal
     useFractalSize: boolean;
     fractalDecay: number;
-
-    // Color Configuration
-    colorMode: VisualizerColorMode;
-
-    hueOffset: number;   // 0-360
-    hueRangeRatio: number; // -1.0 to 1.0 (Mapping expansion/contraction)
-    hueSaturation: number; // 0-100
-    hueBrightnessScale: number; // Multiplier for magnitude to get Brightness
-
-    // FreqGradient_PhaseBrightness specific
-    freqHueStart: number;
-    freqHueEnd: number;
 
     // View Configuration
     selectedStageIndex: number; // -1 for All, 0..N for specific stage
@@ -91,5 +111,25 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         freqHueEnd: 360,    // Red (via Magenta)
         selectedStageIndex: -1,
         rotation: 0
+    }
+];
+
+export const FINAL_STAGE_PRESETS: FinalStageVisualizerConfig[] = [
+    {
+        name: "Spectrum Analyzer",
+        showMode: 'BOTH',
+        scaleMode: 'LOG',
+        customExponent: 2.0,
+        minSize: 2,
+        maxSize: 50,
+        sizeScale: 1.0,
+        gridBaseFreq: 20,
+        colorMode: 'PhaseHue',
+        hueOffset: 0,
+        hueRangeRatio: 1.0,
+        hueSaturation: 80,
+        hueBrightnessScale: 200,
+        freqHueStart: 240,
+        freqHueEnd: 0
     }
 ];

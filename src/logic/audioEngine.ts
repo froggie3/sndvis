@@ -14,7 +14,7 @@ import type { EnvelopeConfig } from '../domain/envelope-config.js';
 import type { ButterflyVisualizerConfig } from '../visualizer/config.js';
 import { DEFAULT_FFT_SIZE } from '../domain/constants.js';
 
-import { DummyVisualizer } from '../visualizer/DummyVisualizer.js';
+import { FinalStageVisualizer } from '../visualizer/FinalStageVisualizer.js';
 import { VisualizerManager } from '../visualizer/VisualizerManager.js';
 
 // Global State
@@ -38,12 +38,12 @@ const singleCfg = vizSingle.getSettings();
 singleCfg.selectedStageIndex = 0; // Default to Stage 0
 vizSingle.importSettings(singleCfg);
 
-const vizDummy = new DummyVisualizer();
+const vizFinal = new FinalStageVisualizer(); // Replaces Dummy
 
 // Register
 visualizerManager.register('Butterfly (Multi)', vizMulti);
 visualizerManager.register('Butterfly (Single)', vizSingle);
-visualizerManager.register('Dummy', vizDummy);
+visualizerManager.register('Spectrum (Final Stage)', vizFinal);
 
 // Export generic interface for loops
 export const visualizer = visualizerManager;

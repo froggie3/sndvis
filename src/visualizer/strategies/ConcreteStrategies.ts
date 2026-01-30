@@ -1,13 +1,13 @@
 import type p5 from 'p5';
-import type { ButterflyVisualizerConfig } from '../config.js';
+import type { ColorCapableConfig } from '../config.js';
 import type { IColorStrategy, ColorContext } from './IColorStrategy.js';
 
 export class PhaseHueStrategy implements IColorStrategy {
-    setup(p: p5, _config: ButterflyVisualizerConfig): void {
+    setup(p: p5, _config: ColorCapableConfig): void {
         p.colorMode(p.HSB, 360, 100, 100, 100);
     }
 
-    apply(p: p5, context: ColorContext, config: ButterflyVisualizerConfig): void {
+    apply(p: p5, context: ColorContext, config: ColorCapableConfig): void {
         const { complex } = context;
         // Calculate Phase
         const phase = Math.atan2(complex.im, complex.re); // -PI to PI
@@ -30,11 +30,11 @@ export class PhaseHueStrategy implements IColorStrategy {
 }
 
 export class FreqGradientStrategy implements IColorStrategy {
-    setup(p: p5, _config: ButterflyVisualizerConfig): void {
+    setup(p: p5, _config: ColorCapableConfig): void {
         p.colorMode(p.HSB, 360, 100, 100, 100);
     }
 
-    apply(p: p5, context: ColorContext, config: ButterflyVisualizerConfig): void {
+    apply(p: p5, context: ColorContext, config: ColorCapableConfig): void {
         const { index, total, complex } = context;
 
         // Freq -> Hue (Gradient)
