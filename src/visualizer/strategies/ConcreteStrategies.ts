@@ -4,7 +4,7 @@ import type { IColorStrategy, ColorContext } from './IColorStrategy.js';
 
 export class PhaseHueStrategy implements IColorStrategy {
     setup(p: p5, _config: ColorCapableConfig): void {
-        p.colorMode(p.HSB, 360, 100, 100, 100);
+        p.colorMode(p.HSL, 360, 100, 100);
     }
 
     apply(p: p5, context: ColorContext, config: ColorCapableConfig): void {
@@ -22,7 +22,7 @@ export class PhaseHueStrategy implements IColorStrategy {
         hue = ((hue % 360) + 360) % 360;
 
         const sat = config.hueSaturation;
-        const bri = Math.min(100, context.adsrValue * config.hueBrightnessScale);
+        const bri = Math.min(100, context.adsrValue * config.hueLightnessScale);
 
         // Round to avoid caching explosion
         p.fill(Math.round(hue), Math.round(sat), Math.round(bri));
@@ -31,7 +31,7 @@ export class PhaseHueStrategy implements IColorStrategy {
 
 export class FreqGradientStrategy implements IColorStrategy {
     setup(p: p5, _config: ColorCapableConfig): void {
-        p.colorMode(p.HSB, 360, 100, 100, 100);
+        p.colorMode(p.HSL, 360, 100, 100);
     }
 
     apply(p: p5, context: ColorContext, config: ColorCapableConfig): void {

@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { visualizerManager } from '../logic/audioEngine';
 
 const visualizers = visualizerManager.getAvailableVisualizers();

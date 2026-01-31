@@ -2,7 +2,14 @@
   <div class="control-panel">
     <strong>Visualizer Settings</strong>
     
-    <div v-if="isFinalStageMode">
+    <div class="section-label">Common</div>
+    <div class="slider-grid">
+         <label>BG H</label><input type="range" min="0" max="360" v-model.number="colorCfg.backgroundColor.h" @input="onColorChange"><span>{{ colorCfg.backgroundColor.h }}</span>
+         <label>BG S</label><input type="range" min="0" max="100" v-model.number="colorCfg.backgroundColor.s" @input="onColorChange"><span>{{ colorCfg.backgroundColor.s }}</span>
+         <label>BG L</label><input type="range" min="0" max="100" v-model.number="colorCfg.backgroundColor.l" @input="onColorChange"><span>{{ colorCfg.backgroundColor.l }}</span>
+    </div>
+
+    <div v-if="isFinalStageMode" class="group" style="padding-top: 5px;">
         <select v-model="selectedGenericPresetName" @change="onGenericPresetChange" style="margin-bottom: 5px; width: 100%;">
             <option v-for="p in finalStagePresets" :key="p.name" :value="p.name">{{ p.name }}</option>
             <option value="Custom">Custom</option>
@@ -58,13 +65,20 @@
         <div v-if="finalCfg.colorMode === 'PhaseHue'" class="slider-grid group">
             <label>Offset</label><input type="range" min="0" max="360" v-model.number="finalCfg.hueOffset" @input="onFinalCustomChange"><span>{{ finalCfg.hueOffset }}°</span>
             <label>Range</label><input type="range" min="-1" max="1" step="0.01" v-model.number="finalCfg.hueRangeRatio" @input="onFinalCustomChange"><span>{{ finalCfg.hueRangeRatio }}</span>
-            <label>BriScale</label><input type="range" min="0" max="255" v-model.number="finalCfg.hueBrightnessScale" @input="onFinalCustomChange"><span>{{ finalCfg.hueBrightnessScale }}</span>
+            <label>Lightness</label><input type="range" min="0" max="100" v-model.number="finalCfg.hueLightnessScale" @input="onFinalCustomChange"><span>{{ finalCfg.hueLightnessScale }}</span>
         </div>
 
         <!-- Mode: Freq -->
         <div v-if="finalCfg.colorMode === 'FreqGradient_PhaseBrightness'" class="slider-grid group">
             <label>StartHue</label><input type="range" min="0" max="360" v-model.number="finalCfg.freqHueStart" @input="onFinalCustomChange"><span>{{ finalCfg.freqHueStart }}</span>
             <label>EndHue</label><input type="range" min="0" max="360" v-model.number="finalCfg.freqHueEnd" @input="onFinalCustomChange"><span>{{ finalCfg.freqHueEnd }}</span>
+        </div>
+
+        <div class="section-label group">Grid Color</div>
+        <div class="slider-grid">
+             <label>H</label><input type="range" min="0" max="360" v-model.number="finalCfg.gridColor.h" @input="onFinalCustomChange"><span>{{ finalCfg.gridColor.h }}</span>
+             <label>S</label><input type="range" min="0" max="100" v-model.number="finalCfg.gridColor.s" @input="onFinalCustomChange"><span>{{ finalCfg.gridColor.s }}</span>
+             <label>L</label><input type="range" min="0" max="100" v-model.number="finalCfg.gridColor.l" @input="onFinalCustomChange"><span>{{ finalCfg.gridColor.l }}</span>
         </div>
     </div>
 
@@ -100,7 +114,7 @@
         <div v-if="cfg.colorMode === 'PhaseHue'" class="slider-grid group">
             <label>Offset</label><input type="range" min="0" max="360" v-model.number="cfg.hueOffset" @input="onCustomChange"><span>{{ cfg.hueOffset }}°</span>
             <label>Range</label><input type="range" min="-1" max="1" step="0.01" v-model.number="cfg.hueRangeRatio" @input="onCustomChange"><span>{{ cfg.hueRangeRatio }}</span>
-            <label>BriScale</label><input type="range" min="0" max="255" v-model.number="cfg.hueBrightnessScale" @input="onCustomChange"><span>{{ cfg.hueBrightnessScale }}</span>
+            <label>LScale</label><input type="range" min="0" max="100" v-model.number="cfg.hueLightnessScale" @input="onCustomChange"><span>{{ cfg.hueLightnessScale }}</span>
             
             <div class="range-display" style="grid-column: 1 / span 3; color: #aaa; font-size: 0.8em; margin-top: 4px;">
             Map: {{ hueRangeText }}
@@ -111,6 +125,13 @@
         <div v-if="cfg.colorMode === 'FreqGradient_PhaseBrightness'" class="slider-grid group">
             <label>StartHue</label><input type="range" min="0" max="360" v-model.number="cfg.freqHueStart" @input="onCustomChange"><span>{{ cfg.freqHueStart }}</span>
             <label>EndHue</label><input type="range" min="0" max="360" v-model.number="cfg.freqHueEnd" @input="onCustomChange"><span>{{ cfg.freqHueEnd }}</span>
+        </div>
+
+        <div v-if="isMultiMode" class="section-label group">Butterfly Line Color</div>
+        <div v-if="isMultiMode" class="slider-grid">
+             <label>H</label><input type="range" min="0" max="360" v-model.number="cfg.butterflyLineColor.h" @input="onCustomChange"><span>{{ cfg.butterflyLineColor.h }}</span>
+             <label>S</label><input type="range" min="0" max="100" v-model.number="cfg.butterflyLineColor.s" @input="onCustomChange"><span>{{ cfg.butterflyLineColor.s }}</span>
+             <label>L</label><input type="range" min="0" max="100" v-model.number="cfg.butterflyLineColor.l" @input="onCustomChange"><span>{{ cfg.butterflyLineColor.l }}</span>
         </div>
 
         <div class="section-label">Signal Normalization</div>
@@ -172,13 +193,23 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue';
-import { VIZ_PRESETS, type ButterflyVisualizerConfig, FINAL_STAGE_PRESETS, type FinalStageVisualizerConfig } from '../visualizer/config';
+import { VIZ_PRESETS, type ButterflyVisualizerConfig, FINAL_STAGE_PRESETS, type FinalStageVisualizerConfig, type ColorCapableConfig } from '../visualizer/config';
 import { setVisualizerConfig, appState, visualizerManager } from '../logic/audioEngine';
 
 const currentVizName = computed(() => visualizerManager.state.currentName);
 const isMultiMode = computed(() => currentVizName.value.includes('(Multi)'));
 const isSingleMode = computed(() => currentVizName.value.includes('(Single)'));
 const isFinalStageMode = computed(() => currentVizName.value.includes('Spectrum'));
+
+const colorCfg = computed<ColorCapableConfig>(() => {
+    if (isFinalStageMode.value) return finalCfg;
+    return cfg;
+});
+
+function onColorChange() {
+    if (isFinalStageMode.value) onFinalCustomChange();
+    else onCustomChange();
+}
 
 const showStageControls = computed(() => isMultiMode.value || isSingleMode.value);
 

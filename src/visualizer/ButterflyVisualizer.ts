@@ -158,7 +158,8 @@ class MultiStageRenderer extends BaseButterflyRenderer {
             const butterflySize = 1 << (s + 1);
             const halfSize = butterflySize >> 1;
 
-            p.stroke(100, 150, 255, 100);
+            const { h: hue, s: sat, l: lum } = config.butterflyLineColor;
+            p.stroke(hue, sat, lum, 100);
 
             for (let i = 0; i < N; i += butterflySize) {
                 for (let j = 0; j < halfSize; j++) {
@@ -396,7 +397,9 @@ export class ButterflyVisualizer implements IVisualizer, Importable<ButterflyVis
             this.nodeStates = Array.from({ length: numStages }, () => new Array(N).fill(0));
         }
 
-        p.background(20); // Dark background
+        p.colorMode(p.HSL, 360, 100, 100);
+        const { h, s, l } = this.config.backgroundColor;
+        p.background(h, s, l);
 
         // Delegate to Renderer
         const ctx: IRendererContext = {

@@ -1,14 +1,21 @@
+export interface HSLColor {
+    h: number;
+    s: number;
+    l: number;
+}
+
 export type VisualizerColorMode = 'PhaseHue' | 'FreqGradient_PhaseBrightness';
 export type NormalizationMode = 'NONE' | 'LOG';
 export type ScaleMode = 'LINEAR' | 'LOG' | 'MEL' | 'CUSTOM';
 export type ShowMode = 'REAL' | 'IMAG' | 'BOTH';
 
 export interface ColorCapableConfig {
+    backgroundColor: HSLColor;
     colorMode: VisualizerColorMode;
     hueOffset: number;   // 0-360
     hueRangeRatio: number; // -1.0 to 1.0 (Mapping expansion/contraction)
     hueSaturation: number; // 0-100
-    hueBrightnessScale: number; // Multiplier for magnitude to get Brightness
+    hueLightnessScale: number; // Multiplier for magnitude to get Brightness
     // FreqGradient_PhaseBrightness specific
     freqHueStart: number;
     freqHueEnd: number;
@@ -26,6 +33,7 @@ export interface FinalStageVisualizerConfig extends ColorCapableConfig {
 
     // Grid
     gridBaseFreq: number; // default 20
+    gridColor: HSLColor;
 
     // Appearance
     minSize: number;
@@ -52,11 +60,15 @@ export interface ButterflyVisualizerConfig extends ColorCapableConfig {
     // View Configuration
     selectedStageIndex: number; // -1 for All, 0..N for specific stage
     rotation: 0 | 90 | 180 | 270; // 0, 90, 180, 270 degrees
+
+    // Lines (Multi only)
+    butterflyLineColor: HSLColor;
 }
 
 export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
     {
         name: "Default (Blue-ish)",
+        backgroundColor: { h: 0, s: 0, l: 8 },
         minSize: 1,
         maxSize: 100,
         sizeScale: 84,
@@ -68,14 +80,16 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         hueOffset: 180,
         hueRangeRatio: 0.1,
         hueSaturation: 80,
-        hueBrightnessScale: 200,
+        hueLightnessScale: 78,
         freqHueStart: 240,
         freqHueEnd: 0,
         selectedStageIndex: -1,
-        rotation: 0
+        rotation: 0,
+        butterflyLineColor: { h: 221, s: 50, l: 49 }
     },
     {
         name: "Phase -> Hue",
+        backgroundColor: { h: 0, s: 0, l: 8 },
         minSize: 2,
         maxSize: 20,
         sizeScale: 50,
@@ -87,14 +101,16 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         hueOffset: 0,
         hueRangeRatio: 1.0,
         hueSaturation: 80,
-        hueBrightnessScale: 80,
+        hueLightnessScale: 31,
         freqHueStart: 240,
         freqHueEnd: 0,
         selectedStageIndex: -1,
-        rotation: 0
+        rotation: 0,
+        butterflyLineColor: { h: 221, s: 50, l: 49 }
     },
     {
         name: "Freq -> Cool/Warm, Phase -> Bri",
+        backgroundColor: { h: 0, s: 0, l: 8 },
         minSize: 2,
         maxSize: 20,
         sizeScale: 50,
@@ -106,17 +122,19 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         hueOffset: 0,
         hueRangeRatio: 1.0,
         hueSaturation: 90,
-        hueBrightnessScale: 0,
+        hueLightnessScale: 0,
         freqHueStart: 240, // Blue
         freqHueEnd: 360,    // Red (via Magenta)
         selectedStageIndex: -1,
-        rotation: 0
+        rotation: 0,
+        butterflyLineColor: { h: 221, s: 50, l: 49 }
     }
 ];
 
 export const FINAL_STAGE_PRESETS: FinalStageVisualizerConfig[] = [
     {
         name: "Spectrum Analyzer",
+        backgroundColor: { h: 0, s: 0, l: 8 },
         showMode: 'BOTH',
         scaleMode: 'LOG',
         customExponent: 2.0,
@@ -124,11 +142,12 @@ export const FINAL_STAGE_PRESETS: FinalStageVisualizerConfig[] = [
         maxSize: 50,
         sizeScale: 1.0,
         gridBaseFreq: 20,
+        gridColor: { h: 0, s: 0, l: 30 },
         colorMode: 'PhaseHue',
         hueOffset: 0,
         hueRangeRatio: 1.0,
         hueSaturation: 80,
-        hueBrightnessScale: 200,
+        hueLightnessScale: 78,
         freqHueStart: 240,
         freqHueEnd: 0
     }

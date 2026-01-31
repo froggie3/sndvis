@@ -11,7 +11,6 @@ import { OfflineExportLoop } from '../io/OfflineExportLoop.js';
 import type { IAudioSource } from '../io/IAudioSource.js';
 import type { IRenderLoop } from '../io/IRenderLoop.js';
 import type { EnvelopeConfig } from '../domain/envelope-config.js';
-import type { ButterflyVisualizerConfig } from '../visualizer/config.js';
 import { DEFAULT_FFT_SIZE } from '../domain/constants.js';
 
 import { FinalStageVisualizer } from '../visualizer/FinalStageVisualizer.js';
@@ -257,10 +256,10 @@ export function setEnvelopeConfig(cfg: EnvelopeConfig) {
     visualizer.setConfig(cfg);
 }
 
-export function setVisualizerConfig(cfg: ButterflyVisualizerConfig) {
+export function setVisualizerConfig(cfg: any) {
     const current = visualizerManager.get(visualizerManager.state.currentName);
     if (current && 'importSettings' in current) {
-        (current as ButterflyVisualizer).importSettings(cfg);
+        (current as any).importSettings(cfg);
     }
 }
 

@@ -73,7 +73,9 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
             this.nodeStatesImag = new Array(N).fill(0);
         }
 
-        p.background(20);
+        p.colorMode(p.HSL, 360, 100, 100);
+        const { h: bgH, s: bgS, l: bgL } = this.config.backgroundColor;
+        p.background(bgH, bgS, bgL);
         p.noStroke();
 
         // 1. Calculate Geometry Helpers
@@ -187,7 +189,7 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
                 if (current < 0.001) continue;
 
                 const x = getXforFreq(f);
-                const s = Math.min(maxSize, Math.max(minSize, current * sizeScale * 100)); // Scaled size
+                const size = Math.min(maxSize, Math.max(minSize, current * sizeScale * 100)); // Scaled size
 
                 // Apply Color
                 // We pass full complex to maintain relation, but this might be confusing if showing split?
@@ -224,7 +226,7 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
                     stageIndex: stageIndex
                 }, this.config);
 
-                p.circle(x, centerY, s);
+                p.circle(x, centerY, size);
             }
         };
 
@@ -234,11 +236,12 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
 
     private drawGrid(p: p5, getX: (f: number) => number, minF: number, maxF: number) {
         p.push();
-        p.stroke(255, 30); // Faint
+        const { gridColor } = this.config;
+        p.stroke(gridColor.h, gridColor.l, gridColor.l, 30); // Faint
         p.strokeWeight(1);
         p.textAlign(p.CENTER, p.BOTTOM);
         p.textSize(10);
-        p.fill(150);
+        p.fill(gridColor.h, gridColor.s, gridColor.l, 150);
 
         const { scaleMode } = this.config;
 
@@ -261,18 +264,18 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
                     // Style
                     if (k === 0 || k === 10) {
                         // Decade line (Major)
-                        p.stroke(255, 60);
+                        p.stroke(gridColor.h, gridColor.s, gridColor.l, 60);
                         // Label
                         if (x > 0 && x < this.width) {
                             // Format k or M
                             let label = f >= 1000 ? (f / 1000) + 'k' : Math.round(f).toString();
                             p.noStroke();
                             p.text(label, x, this.height - 2);
-                            p.stroke(255, 60);
+                            p.stroke(gridColor.h, gridColor.s, gridColor.l, 60);
                         }
                     } else {
                         // Minor
-                        p.stroke(255, 15);
+                        p.stroke(gridColor.h, gridColor.s, gridColor.l, 15);
                     }
 
                     if (x > 0 && x < this.width) {
@@ -287,7 +290,7 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
             // Linear Grid (e.g. every 1k or 5k)
             for (let f = 0; f < maxF; f += 5000) {
                 const x = getX(f);
-                p.stroke(255, 60);
+                p.stroke(gridColor.h, gridColor.s, gridColor.l, 60);
                 p.line(x, 0, x, this.height);
                 p.noStroke();
                 p.text(f / 1000 + 'k', x, this.height - 2);
