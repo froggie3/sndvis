@@ -1,3 +1,4 @@
+import { calculateTransferFunction } from '../domain/transfer-function.js';
 import type p5 from 'p5';
 import type { FFTSnapshot } from '../domain/types.js';
 import type { IVisualizer } from './IVisualizer.js';
@@ -110,6 +111,12 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
                     t = Math.pow(f / maxF, customExponent);
                     break;
             }
+
+            // Apply Transfer Function for Frequency X Position
+            if (this.config.freqToXStrategy) {
+                t = calculateTransferFunction(t, 0, 1, this.config.freqToXStrategy);
+            }
+
             return this.width * 0.05 + t * (this.width * 0.9);
         };
 
@@ -126,24 +133,6 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
         const updateAndDraw = (mode: 'REAL' | 'IMAG') => {
             const isReal = mode === 'REAL';
             const states = isReal ? this.nodeStatesReal : this.nodeStatesImag;
-
-            // Setup color overrides if needed, OR just rely on strategy.
-            // Strategy uses 'index', 'magnitude', 'complex'.
-            // If we want different look for Real/Imag, we might need a custom strategy or 
-            // "Apply" with modified context.
-            // Butterfly visualizer doesn't distinguish real/imag separately usually.
-            // If we use 'PhaseHue', Real/Imag separation is naturally distinct in phase?
-            // Real only -> Phase 0 or PI. Imag only -> Phase PI/2 or 3PI/2.
-            // So PhaseHue works perfectly for coloring Real vs Imag bubbles differently!
-            // Real+ (Cyan-ish/Red), Real- (Cyan-ish/Red), Imag+ (Purple?), Imag- ...
-
-            // Wait, drawNode calculates mag/phase from the COMPLEX value.
-            // If we are visualizing just "Real part magnitude", we are losing phase info relative to Imag.
-            // "Real part" is just a scalar.
-            // If we want to visualize "Real Component", we should arguably pass a constructed complex number
-            // where imag is 0? Or just pass the index and let strategy decide hue based on index?
-            // Standard Spectrum Analyzer usually uses Frequency -> Hue.
-            // Let's use the actual complex data for color calculation, but position/size based on component magnitude.
 
             const centerY = this.height / 2;
 
@@ -189,7 +178,14 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
                 if (current < 0.001) continue;
 
                 const x = getXforFreq(f);
-                const size = Math.min(maxSize, Math.max(minSize, current * sizeScale * 100)); // Scaled size
+
+                // Apply Transfer Function for Size
+                let sizeInput = current;
+                if (this.config.magToSizeStrategy) {
+                    sizeInput = calculateTransferFunction(current, 0, 1, this.config.magToSizeStrategy);
+                }
+
+                const size = Math.min(maxSize, Math.max(minSize, sizeInput * sizeScale * 100)); // Scaled size
 
                 // Apply Color
                 // We pass full complex to maintain relation, but this might be confusing if showing split?
@@ -199,19 +195,6 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
 
                 // Note: Butterfly `drawNode` calls `colorStrategy.apply(..., { complex, magnitude, adsrValue, ... })`.
                 // We should populate this context.
-
-                // Hack: If we are splitting, we might want to offset Y or overlay.
-                // "Overlay" means drawing at same Y.
-                // PhaseHue will differentiate them effectively if we trust it.
-                // Real(x) -> Phase 0 or 180. Imag(y) -> Phase 90 or 270.
-                // So they will have different colors. Great.
-
-                // But for size, we use 'current' (component ADSR).
-                // For color, we use 'complex' (Full signal phase/mag)? 
-                // OR should we use the component as the complex value?
-                // i.e. Real View -> Complex(re, 0). Imag View -> Complex(0, im).
-                // This ensures the color matches the component being displayed.
-                // Yes, this makes sense.
 
                 const vizComplex = isReal ? { re: complex.re, im: 0 } : { re: 0, im: complex.im };
                 // Recalculate generic magnitude for color strategy input (though distinct from ADSR size)

@@ -1,3 +1,5 @@
+import type { TransferFunctionConfig } from '../domain/transfer-function';
+
 export interface HSLColor {
     h: number;
     s: number;
@@ -19,6 +21,11 @@ export interface ColorCapableConfig {
     // FreqGradient_PhaseBrightness specific
     freqHueStart: number;
     freqHueEnd: number;
+
+    // Transfer Functions
+    phaseToHueStrategy: TransferFunctionConfig;
+    freqToHueStrategy: TransferFunctionConfig; // For Gradient
+    adsrToLightnessStrategy: TransferFunctionConfig;
 }
 
 export interface FinalStageVisualizerConfig extends ColorCapableConfig {
@@ -31,6 +38,9 @@ export interface FinalStageVisualizerConfig extends ColorCapableConfig {
     scaleMode: ScaleMode;
     customExponent: number; // For Custom Scale
 
+    // Transfer Functions for Scaling
+    freqToXStrategy: TransferFunctionConfig;
+
     // Grid
     gridBaseFreq: number; // default 20
     gridColor: HSLColor;
@@ -39,6 +49,9 @@ export interface FinalStageVisualizerConfig extends ColorCapableConfig {
     minSize: number;
     maxSize: number;
     sizeScale: number;
+
+    // Transfer Function for Size
+    magToSizeStrategy: TransferFunctionConfig;
 }
 
 export interface ButterflyVisualizerConfig extends ColorCapableConfig {
@@ -49,9 +62,15 @@ export interface ButterflyVisualizerConfig extends ColorCapableConfig {
     maxSize: number;
     sizeScale: number;
 
+    // Transfer Function for Size
+    magToSizeStrategy: TransferFunctionConfig;
+
     // Normalization
     normalizationMode: NormalizationMode;
     logBase: number;
+
+    // Transfer Function for Normalization
+    magNormStrategy: TransferFunctionConfig;
 
     // Fractal
     useFractalSize: boolean;
@@ -65,6 +84,8 @@ export interface ButterflyVisualizerConfig extends ColorCapableConfig {
     butterflyLineColor: HSLColor;
 }
 
+
+
 export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
     {
         name: "Default (Blue-ish)",
@@ -74,6 +95,8 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         sizeScale: 84,
         normalizationMode: 'LOG',
         logBase: 10,
+        magNormStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' }, // Default Linear mapping of log result
+        magToSizeStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' }, // Default Linear mapping
         useFractalSize: true,
         fractalDecay: 0.9,
         colorMode: 'PhaseHue',
@@ -85,7 +108,10 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         freqHueEnd: 0,
         selectedStageIndex: -1,
         rotation: 0,
-        butterflyLineColor: { h: 221, s: 50, l: 49 }
+        butterflyLineColor: { h: 221, s: 50, l: 49 },
+        phaseToHueStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
+        freqToHueStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
+        adsrToLightnessStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' }
     },
     {
         name: "Phase -> Hue",
@@ -95,6 +121,8 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         sizeScale: 50,
         normalizationMode: 'LOG',
         logBase: 10,
+        magNormStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
+        magToSizeStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
         useFractalSize: true,
         fractalDecay: 0.9,
         colorMode: 'PhaseHue',
@@ -106,7 +134,10 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         freqHueEnd: 0,
         selectedStageIndex: -1,
         rotation: 0,
-        butterflyLineColor: { h: 221, s: 50, l: 49 }
+        butterflyLineColor: { h: 221, s: 50, l: 49 },
+        phaseToHueStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
+        freqToHueStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
+        adsrToLightnessStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' }
     },
     {
         name: "Freq -> Cool/Warm, Phase -> Bri",
@@ -116,6 +147,8 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         sizeScale: 50,
         normalizationMode: 'LOG',
         logBase: 10,
+        magNormStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
+        magToSizeStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
         useFractalSize: true,
         fractalDecay: 0.9,
         colorMode: 'FreqGradient_PhaseBrightness',
@@ -127,7 +160,10 @@ export const VIZ_PRESETS: ButterflyVisualizerConfig[] = [
         freqHueEnd: 360,    // Red (via Magenta)
         selectedStageIndex: -1,
         rotation: 0,
-        butterflyLineColor: { h: 221, s: 50, l: 49 }
+        butterflyLineColor: { h: 221, s: 50, l: 49 },
+        phaseToHueStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
+        freqToHueStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
+        adsrToLightnessStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' }
     }
 ];
 
@@ -138,9 +174,11 @@ export const FINAL_STAGE_PRESETS: FinalStageVisualizerConfig[] = [
         showMode: 'BOTH',
         scaleMode: 'LOG',
         customExponent: 2.0,
+        freqToXStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
         minSize: 2,
         maxSize: 50,
         sizeScale: 1.0,
+        magToSizeStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
         gridBaseFreq: 20,
         gridColor: { h: 0, s: 0, l: 30 },
         colorMode: 'PhaseHue',
@@ -149,6 +187,9 @@ export const FINAL_STAGE_PRESETS: FinalStageVisualizerConfig[] = [
         hueSaturation: 80,
         hueLightnessScale: 78,
         freqHueStart: 240,
-        freqHueEnd: 0
+        freqHueEnd: 0,
+        phaseToHueStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
+        freqToHueStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' },
+        adsrToLightnessStrategy: { p0: 0, p1: 1, p2: 0, type: 'power' }
     }
 ];

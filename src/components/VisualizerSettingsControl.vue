@@ -30,6 +30,7 @@
                 <option value="MEL">Mel Scale</option>
                 <option value="CUSTOM">Custom (Exp)</option>
             </select>
+            <button class="tiny-btn" @click="editCurve('freqToXStrategy', 'Frequency Layout')">Curve</button>
         </div>
         <div v-if="finalCfg.scaleMode === 'CUSTOM'" class="row">
              <label>Exp:</label>
@@ -41,6 +42,7 @@
              <label>Min</label><input type="range" min="0" max="20" v-model.number="finalCfg.minSize" @input="onFinalCustomChange"><span>{{ finalCfg.minSize }}</span>
              <label>Max</label><input type="range" min="5" max="100" v-model.number="finalCfg.maxSize" @input="onFinalCustomChange"><span>{{ finalCfg.maxSize }}</span>
              <label>Scale</label><input type="range" min="0.1" max="5.0" step="0.1" v-model.number="finalCfg.sizeScale" @input="onFinalCustomChange"><span>{{ finalCfg.sizeScale }}</span>
+             <div></div><button class="tiny-btn" @click="editCurve('magToSizeStrategy', 'Magnitude -> Size')" style="grid-column: span 2;">Size Curve</button>
         </div>
         
         <div class="row" style="margin-top: 5px;">
@@ -66,12 +68,15 @@
             <label>Offset</label><input type="range" min="0" max="360" v-model.number="finalCfg.hueOffset" @input="onFinalCustomChange"><span>{{ finalCfg.hueOffset }}°</span>
             <label>Range</label><input type="range" min="-1" max="1" step="0.01" v-model.number="finalCfg.hueRangeRatio" @input="onFinalCustomChange"><span>{{ finalCfg.hueRangeRatio }}</span>
             <label>Lightness</label><input type="range" min="0" max="100" v-model.number="finalCfg.hueLightnessScale" @input="onFinalCustomChange"><span>{{ finalCfg.hueLightnessScale }}</span>
+            <div></div><button class="tiny-btn" @click="editCurve('phaseToHueStrategy', 'Phase -> Hue')" style="grid-column: span 2;">Hue Curve</button>
+            <div></div><button class="tiny-btn" @click="editCurve('adsrToLightnessStrategy', 'ADSR -> Lightness')" style="grid-column: span 2;">Lightness Curve</button>
         </div>
 
         <!-- Mode: Freq -->
         <div v-if="finalCfg.colorMode === 'FreqGradient_PhaseBrightness'" class="slider-grid group">
             <label>StartHue</label><input type="range" min="0" max="360" v-model.number="finalCfg.freqHueStart" @input="onFinalCustomChange"><span>{{ finalCfg.freqHueStart }}</span>
             <label>EndHue</label><input type="range" min="0" max="360" v-model.number="finalCfg.freqHueEnd" @input="onFinalCustomChange"><span>{{ finalCfg.freqHueEnd }}</span>
+            <div></div><button class="tiny-btn" @click="editCurve('freqToHueStrategy', 'Freq -> Hue Gradient')" style="grid-column: span 2;">Gradient Curve</button>
         </div>
 
         <div class="section-label group">Grid Color</div>
@@ -94,6 +99,7 @@
         <label>Min</label><input type="range" min="0" max="20" v-model.number="cfg.minSize" @input="onCustomChange"><span>{{ cfg.minSize }}</span>
         <label>Max</label><input type="range" min="5" max="100" v-model.number="cfg.maxSize" @input="onCustomChange"><span>{{ cfg.maxSize }}</span>
         <label>Scale</label><input type="range" min="1" max="200" v-model.number="cfg.sizeScale" @input="onCustomChange"><span>{{ cfg.sizeScale }}</span>
+        <div></div><button class="tiny-btn" @click="editCurve('magToSizeStrategy', 'Magnitude -> Size')" style="grid-column: span 2;">Size Curve</button>
         </div>
 
         <div class="section-label">Color</div>
@@ -115,16 +121,18 @@
             <label>Offset</label><input type="range" min="0" max="360" v-model.number="cfg.hueOffset" @input="onCustomChange"><span>{{ cfg.hueOffset }}°</span>
             <label>Range</label><input type="range" min="-1" max="1" step="0.01" v-model.number="cfg.hueRangeRatio" @input="onCustomChange"><span>{{ cfg.hueRangeRatio }}</span>
             <label>LScale</label><input type="range" min="0" max="100" v-model.number="cfg.hueLightnessScale" @input="onCustomChange"><span>{{ cfg.hueLightnessScale }}</span>
-            
             <div class="range-display" style="grid-column: 1 / span 3; color: #aaa; font-size: 0.8em; margin-top: 4px;">
             Map: {{ hueRangeText }}
             </div>
+            <div></div><button class="tiny-btn" @click="editCurve('phaseToHueStrategy', 'Phase -> Hue')" style="grid-column: span 2;">Hue Curve</button>
+            <div></div><button class="tiny-btn" @click="editCurve('adsrToLightnessStrategy', 'ADSR -> Lightness')" style="grid-column: span 2;">Lightness Curve</button>
         </div>
 
         <!-- Mode: Freq -->
         <div v-if="cfg.colorMode === 'FreqGradient_PhaseBrightness'" class="slider-grid group">
             <label>StartHue</label><input type="range" min="0" max="360" v-model.number="cfg.freqHueStart" @input="onCustomChange"><span>{{ cfg.freqHueStart }}</span>
             <label>EndHue</label><input type="range" min="0" max="360" v-model.number="cfg.freqHueEnd" @input="onCustomChange"><span>{{ cfg.freqHueEnd }}</span>
+            <div></div><button class="tiny-btn" @click="editCurve('freqToHueStrategy', 'Freq -> Hue Gradient')" style="grid-column: span 2;">Gradient Curve</button>
         </div>
 
         <div v-if="isMultiMode" class="section-label group">Butterfly Line Color</div>
@@ -146,6 +154,7 @@
             <label>Base:</label>
             <input type="number" v-model.number="cfg.logBase" min="2" max="100" style="width: 50px;" @input="onCustomChange">
             </div>
+            <button class="tiny-btn" @click="editCurve('magNormStrategy', 'Magnitude Normalization')">Curve</button>
         </div>
 
         <div class="section-label">Fractal Scaling</div>
@@ -188,6 +197,23 @@
             </template>
         </div>
     </template>
+
+    <!-- Modal for Curve Editing -->
+    <div v-if="editingConfigKey" class="tf-modal-overlay">
+        <div class="tf-modal">
+            <div class="tf-header">
+                <strong>{{ editingConfigTitle }}</strong>
+                <button class="close-btn" @click="closeCurveEditor">Close</button>
+            </div>
+            <div class="tf-body">
+                <TransferFunctionEditor 
+                    v-if="currentEditingConfig"
+                    :modelValue="currentEditingConfig"
+                    @update:modelValue="updateCurveConfig" 
+                />
+            </div>
+        </div>
+    </div>
   </div>
 </template>
 
@@ -195,6 +221,8 @@
 import { ref, reactive, computed, watch } from 'vue';
 import { VIZ_PRESETS, type ButterflyVisualizerConfig, FINAL_STAGE_PRESETS, type FinalStageVisualizerConfig, type ColorCapableConfig } from '../visualizer/config';
 import { setVisualizerConfig, appState, visualizerManager } from '../logic/audioEngine';
+import TransferFunctionEditor from './TransferFunctionEditor.vue';
+import type { TransferFunctionConfig } from '../domain/transfer-function';
 
 const currentVizName = computed(() => visualizerManager.state.currentName);
 const isMultiMode = computed(() => currentVizName.value.includes('(Multi)'));
@@ -352,19 +380,53 @@ watch(currentVizName, () => {
     }
 });
 
+// --- Transfer Function Editing ---
+const editingConfigKey = ref<string | null>(null);
+const editingConfigTitle = ref<string>("");
+
+// Helper to determine which config object to operate on
+const activeConfigObject = computed(() => {
+    if (isFinalStageMode.value) return finalCfg;
+    return cfg;
+});
+
+const currentEditingConfig = computed(() => {
+    if (!editingConfigKey.value || !activeConfigObject.value) return undefined;
+    // Cast to any for dynamic access
+    return (activeConfigObject.value as any)[editingConfigKey.value] as TransferFunctionConfig;
+});
+
+function editCurve(key: string, title: string) {
+    editingConfigKey.value = key;
+    editingConfigTitle.value = title;
+}
+
+function closeCurveEditor() {
+    editingConfigKey.value = null;
+}
+
+function updateCurveConfig(newValue: TransferFunctionConfig) {
+    if (editingConfigKey.value && activeConfigObject.value) {
+        // Update local state
+        (activeConfigObject.value as any)[editingConfigKey.value] = newValue;
+        
+        // Trigger update to engine
+        if (isFinalStageMode.value) {
+            onFinalCustomChange();
+        } else {
+            onCustomChange();
+        }
+    }
+}
+
 </script>
 
 <style scoped>
 .control-panel {
-  color: white; /* Removed background/padding duplicates if handled by App, but kept for standalone usage safety? No, App.vue has .control-block. VisualizerSettingsControl uses .control-panel. I will trust App.vue styles or sync them. For now, removing the problematic width/overflow. */
-  /* Remove fixed width and let App.vue handle it, OR set 100% to fill container */
-  /* User requested 15rem total width. I will handle that in App.vue for all panels. */
+  color: white; 
   display: flex;
   flex-direction: column;
-  /* Removed box-shadow, width, max-height, overflow-y */
 }
-
-/* ... existing styles ... */
 
 .section-label {
     font-size: 0.85em; 
@@ -406,11 +468,65 @@ watch(currentVizName, () => {
     cursor: pointer;
 }
 
-.dummy-msg {
-    padding: 20px;
-    text-align: center;
-    color: #888;
-    background: rgba(255,255,255,0.05);
+.tiny-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #00c8ff;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.tiny-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Modal Overlay */
+.tf-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.tf-modal {
+    background: #2a2a35;
+    border: 1px solid #444;
     border-radius: 8px;
+    width: 350px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.tf-header {
+    background: rgba(0,0,0,0.2);
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+}
+
+.tf-body {
+    padding: 10px;
+}
+
+.close-btn {
+    background: transparent;
+    border: 1px solid #666;
+    color: #ccc;
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
 }
 </style>

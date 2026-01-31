@@ -1,3 +1,4 @@
+import { calculateTransferFunction } from '../domain/transfer-function.js';
 import type p5 from 'p5';
 import type { FFTSnapshot, ComplexArray } from '../domain/types.js';
 import type { IVisualizer } from './IVisualizer.js';
@@ -58,6 +59,12 @@ abstract class BaseButterflyRenderer {
                 break;
         }
 
+        // Apply Transfer Function for Normalization
+        // We assume targetMag is mostly in 0..1 range after the switch, or at least max of interest is 1.
+        if (config.magNormStrategy) {
+            targetMag = calculateTransferFunction(targetMag, 0, 1, config.magNormStrategy);
+        }
+
         // 3. ADSR Update (on the NORMALIZED value)
         let current = nodeStates[s][i];
 
@@ -89,17 +96,15 @@ abstract class BaseButterflyRenderer {
         }
 
         // 5. Calculate Final Size
+        // Apply Transfer Function for Size
+        let sizeInput = current;
+        if (config.magToSizeStrategy) {
+            sizeInput = calculateTransferFunction(current, 0, 1, config.magToSizeStrategy);
+        }
+
         // Size = Base + (NormalizedValue * Scale * FractalFactor)
-        // We apply fractal factor to the dynamic part usually, or the whole size?
-        // User spec: "奧の段...ほど円を小さく"
-        // Let's apply to the dynamic component primarily to keep 'minSize' as a baseline visibility,
-        // OR apply to the whole thing.
-        // If we apply to whole size, it shrinks everything including minSize.
-        // Let's apply to the gain part first.
-        // Actually, if minSize is constant, deep nodes overlap.
-        // It's probably better to scale the whole effective visual footprint, but let's stick to user spec "currentVal に...掛けて".
         // Spec: "currentVal に sizeScale と scaleFactor を掛けて描画"
-        const size = Math.min(maxSize, minSize + current * sizeScale * fractalFactor);
+        const size = Math.min(maxSize, minSize + sizeInput * sizeScale * fractalFactor);
 
         p.noStroke();
 

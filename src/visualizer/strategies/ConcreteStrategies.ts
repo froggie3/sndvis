@@ -1,6 +1,7 @@
 import type p5 from 'p5';
 import type { ColorCapableConfig } from '../config.js';
 import type { IColorStrategy, ColorContext } from './IColorStrategy.js';
+import { calculateTransferFunction } from '../../domain/transfer-function.js';
 
 export class PhaseHueStrategy implements IColorStrategy {
     setup(p: p5, _config: ColorCapableConfig): void {
@@ -12,7 +13,12 @@ export class PhaseHueStrategy implements IColorStrategy {
         // Calculate Phase
         const phase = Math.atan2(complex.im, complex.re); // -PI to PI
         // Normalize phase to 0..1
-        const normPhase = (phase + Math.PI) / (2 * Math.PI); // 0..1
+        let normPhase = (phase + Math.PI) / (2 * Math.PI); // 0..1
+
+        // Apply Transfer Function to Phase
+        if (config.phaseToHueStrategy) {
+            normPhase = calculateTransferFunction(normPhase, 0, 1, config.phaseToHueStrategy);
+        }
 
         // Map using Offset and RangeRatio
         // Starting point is hueOffset, mapping range is hueRangeRatio * 360
@@ -22,7 +28,14 @@ export class PhaseHueStrategy implements IColorStrategy {
         hue = ((hue % 360) + 360) % 360;
 
         const sat = config.hueSaturation;
-        const bri = Math.min(100, context.adsrValue * config.hueLightnessScale);
+
+        // ADSR to Lightness
+        let lightnessInput = context.adsrValue;
+        if (config.adsrToLightnessStrategy) {
+            lightnessInput = calculateTransferFunction(lightnessInput, 0, 1, config.adsrToLightnessStrategy);
+        }
+
+        const bri = Math.min(100, lightnessInput * config.hueLightnessScale);
 
         // Round to avoid caching explosion
         p.fill(Math.round(hue), Math.round(sat), Math.round(bri));
@@ -39,13 +52,26 @@ export class FreqGradientStrategy implements IColorStrategy {
 
         // Freq -> Hue (Gradient)
         // i is index, N is total.
-        const t = index / (total - 1);
+        let t = index / (total - 1);
+
+        // Apply Transfer Function to Frequency Gradient Position
+        if (config.freqToHueStrategy) {
+            t = calculateTransferFunction(t, 0, 1, config.freqToHueStrategy);
+        }
+
         const hue = p.lerp(config.freqHueStart, config.freqHueEnd, t);
         const finalHue = (hue + 360) % 360;
 
         // Phase -> Brightness
         const phase = Math.atan2(complex.im, complex.re);
         const normPhase = (phase + Math.PI) / (2 * Math.PI); // 0..1
+
+        // Note: FreqGradientStrategy uses Phase for brightness, not ADSR.
+        // If we wanted to map this phase-brightness:
+        // let briT = normPhase;
+        // if(config.phaseToHueStrategy) ... ? But phaseToHue is for HUE.
+        // Maybe we just leave this as raw phase brightness for now unless user requested otherwise.
+        // User request "Phase to Hue" is specific.
 
         const bri = normPhase * 100;
         const sat = config.hueSaturation;
