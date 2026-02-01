@@ -3,9 +3,8 @@
     <div class="row">
       <label>Source: </label>
       <select :value="appState.currentSourceType" @change="onChangeSource">
-        <option value="test">Test Signal (Sine)</option>
-        <option value="mic">Microphone</option>
         <option value="file">File Player</option>
+        <option value="mic">Microphone</option>
       </select>
     </div>
 

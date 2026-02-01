@@ -3,7 +3,6 @@ import p5 from 'p5';
 import { FFTProcessor } from '../domain/fft-processor.js';
 import { SpectralWhitener } from '../domain/spectral-whitener.js';
 import { ButterflyVisualizer } from '../visualizer/ButterflyVisualizer.js';
-import { TestSignalSource } from '../io/TestSignalSource.js';
 import { MicrophoneSource } from '../io/MicrophoneSource.js';
 import { FileAudioSource } from '../io/FileAudioSource.js';
 import { RealtimeLoop } from '../io/RealtimeLoop.js';
@@ -49,7 +48,7 @@ export const visualizer = visualizerManager;
 
 // Reactive State for UI
 export const appState = reactive({
-    currentSourceType: 'test',
+    currentSourceType: 'file',
     fftSize: DEFAULT_FFT_SIZE, // Default FFT Size
     isExporting: false,
     exportProgress: 0,
@@ -85,7 +84,7 @@ export function initAudio(p: p5) {
 
     // Initial Setup
     // Default Source
-    currentSource = new TestSignalSource(appState.fftSize);
+    currentSource = new FileAudioSource(appState.fftSize);
 
     startDriver();
 }
@@ -94,7 +93,7 @@ function startDriver() {
     if (!p5Instance) return;
     if (driver) driver.stop();
 
-    if (currentSource instanceof TestSignalSource) whitener.reset();
+    if (currentSource instanceof FileAudioSource) whitener.reset();
 
     driver = new RealtimeLoop(currentSource, processor, whitener, visualizer, p5Instance);
     driver.start();
@@ -176,15 +175,12 @@ export async function switchSource(type: string) {
     appState.currentSourceType = type;
 
     switch (type) {
-        case 'mic':
-            currentSource = new MicrophoneSource(appState.fftSize);
-            break;
         case 'file':
             currentSource = new FileAudioSource(appState.fftSize);
             break;
-        case 'test':
+        case 'mic':
         default:
-            currentSource = new TestSignalSource(appState.fftSize);
+            currentSource = new MicrophoneSource(appState.fftSize);
             break;
     }
 

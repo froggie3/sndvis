@@ -66,7 +66,6 @@ graph TD
 
 * **`MicrophoneSource`**: `getUserMedia` をラップ。UIは「Start/Stop」ボタンのみ。
 * **`FileAudioSource`**: ファイルデコードと再生位置管理を担当。UIは「ファイル選択」「シークバー」。
-* **`TestSignalSource`**: デバッグ用。正弦波などを生成。マイクが動かない時のテスト用モジュールとして機能します。
 
 ### 2. Domain Layer (FFT計算コア)
 
