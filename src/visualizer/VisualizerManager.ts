@@ -1,6 +1,6 @@
 import type p5 from 'p5';
-import type { FFTSnapshot } from '../domain/types';
-import type { IVisualizer } from './IVisualizer';
+import type { FFTResult } from '../domain/types';
+import type { IVisualizer, VisualizerRequirements } from './IVisualizer';
 import { reactive } from 'vue';
 
 export class VisualizerManager implements IVisualizer {
@@ -19,6 +19,20 @@ export class VisualizerManager implements IVisualizer {
     private p: p5 | null = null;
     private width: number = 0;
     private height: number = 0;
+
+    public get requirements(): VisualizerRequirements {
+        // Dynamic requirements based on active visualizer.
+        // If no active visualizer, default to false (safe/minimal).
+        if (this.currentVisualizer) {
+            return this.currentVisualizer.requirements;
+        }
+        return { needsHistory: false }; // Or true if we want to be safe? 
+        // If we say false, loop computes final only. If current appears and needs history, it will break frame 1? 
+        // Actually, if current changes, loop calls requirements again next frame.
+        // However, if we just switched, we might want to be careful. 
+        // Let's assume the loop re-checks requirements often enough (every frame in RealtimeLoop).
+    }
+
 
     register(name: string, visualizer: IVisualizer) {
         this.visualizers.set(name, visualizer);
@@ -63,9 +77,9 @@ export class VisualizerManager implements IVisualizer {
         }
     }
 
-    draw(p: p5, snapshot: FFTSnapshot): void {
+    draw(p: p5, data: FFTResult): void {
         if (this.currentVisualizer) {
-            this.currentVisualizer.draw(p, snapshot);
+            this.currentVisualizer.draw(p, data);
         }
     }
 

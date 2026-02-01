@@ -1,6 +1,6 @@
 import type p5 from 'p5';
-import type { FFTSnapshot } from '../domain/types.js';
-import type { IVisualizer } from './IVisualizer.js';
+import type { FFTSnapshot, FFTResult } from '../domain/types.js';
+import type { IVisualizer, VisualizerRequirements } from './IVisualizer.js';
 import { type EnvelopeConfig, PRESETS } from '../domain/envelope-config.js';
 import type { Importable, Exportable } from '../domain/mixins.js';
 import { VIZ_PRESETS, type ButterflyVisualizerConfig } from './config.js';
@@ -15,6 +15,10 @@ import { SingleStageRenderer } from './butterfly/renderers/SingleStageRenderer.j
 export class ButterflyVisualizer implements IVisualizer, Importable<ButterflyVisualizerConfig>, Exportable<ButterflyVisualizerConfig> {
     private width: number = 0;
     private height: number = 0;
+
+    public get requirements(): VisualizerRequirements {
+        return { needsHistory: true };
+    }
 
     // Envelope State
     // nodeStates[stageIndex][fftIndex]
@@ -77,7 +81,12 @@ export class ButterflyVisualizer implements IVisualizer, Importable<ButterflyVis
         }
     }
 
-    draw(p: p5, snapshot: FFTSnapshot): void {
+    draw(p: p5, data: FFTResult): void {
+        const snapshot = data as FFTSnapshot;
+        if (!snapshot.stages) {
+            console.warn("ButterflyVisualizer requires full FFT history.");
+            return;
+        }
         const stages = snapshot.stages;
         const numStages = stages.length;
         const N = stages[0].length;

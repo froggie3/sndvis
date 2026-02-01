@@ -88,7 +88,13 @@ export class OfflineExportLoop implements IRenderLoop {
 
             // 2. Compute
             const whitenedData = this.whitener.whitening(data);
-            const snapshot = this.processor.compute(whitenedData);
+            let snapshot;
+
+            if (this.visualizer.requirements.needsHistory) {
+                snapshot = this.processor.compute(whitenedData);
+            } else {
+                snapshot = this.processor.computeFinal(whitenedData);
+            }
 
             // 3. Draw
             // We can draw to the main canvas (p5Instance)

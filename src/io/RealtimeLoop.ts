@@ -54,8 +54,15 @@ export class RealtimeLoop implements IRenderLoop {
         const inputData = this.source.getNextBuffer();
 
         // 2. Process
+        // 2. Process
         const whitenedData = this.whitener.whitening(inputData);
-        const snapshot = this.processor.compute(whitenedData);
+        let snapshot;
+
+        if (this.visualizer.requirements.needsHistory) {
+            snapshot = this.processor.compute(whitenedData);
+        } else {
+            snapshot = this.processor.computeFinal(whitenedData);
+        }
 
         // 3. Draw
         this.visualizer.draw(this.p5Instance, snapshot);

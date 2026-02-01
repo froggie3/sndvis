@@ -1,7 +1,7 @@
 import { calculateTransferFunction } from '../domain/transfer-function.js';
 import type p5 from 'p5';
-import type { FFTSnapshot } from '../domain/types.js';
-import type { IVisualizer } from './IVisualizer.js';
+import type { FFTResult } from '../domain/types.js';
+import type { IVisualizer, VisualizerRequirements } from './IVisualizer.js';
 import type { Importable, Exportable } from '../domain/mixins.js';
 import { FINAL_STAGE_PRESETS, type FinalStageVisualizerConfig } from './config.js';
 import { ColorStrategyFactory } from './strategies/ColorStrategyFactory.js';
@@ -12,6 +12,10 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
     private width: number = 0;
     private height: number = 0;
     private config: FinalStageVisualizerConfig = { ...FINAL_STAGE_PRESETS[0] };
+
+    public get requirements(): VisualizerRequirements {
+        return { needsHistory: false };
+    }
 
     // Strategies
     private colorStrategy: IColorStrategy;
@@ -60,13 +64,13 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
         return this.config;
     }
 
-    draw(p: p5, snapshot: FFTSnapshot): void {
-        const stageIndex = snapshot.stages.length - 1;
-        if (stageIndex < 0) return;
-
-        const data = snapshot.stages[stageIndex];
-        const N = data.length;
+    draw(p: p5, data: FFTResult): void {
+        const finalStage = data.finalStage;
+        const N = finalStage.length;
         const { showMode, scaleMode, minSize, maxSize, sizeScale, customExponent, gridBaseFreq } = this.config;
+
+        const stageIndex = Math.log2(N); // Or explicitly pass if available, but N determines it.
+
 
         // Resize state arrays
         if (this.nodeStatesReal.length !== N) {
@@ -137,7 +141,7 @@ export class FinalStageVisualizer implements IVisualizer, Importable<FinalStageV
             const centerY = this.height / 2;
 
             for (let i = 0; i < N; i++) {
-                const complex = data[i];
+                const complex = finalStage[i];
                 const val = isReal ? complex.re : complex.im;
                 const absVal = Math.abs(val); // Magnitude of component
 
