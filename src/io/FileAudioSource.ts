@@ -62,6 +62,11 @@ export class FileAudioSource implements IAudioSource {
         this.sourceNode.connect(this.inputAnalyser!);
         this.inputAnalyser!.connect(this.audioContext.destination);
 
+        // Ensure context is running (fixes autoplay issues)
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
+
         // Resume from where we left off
         this.startTime = this.audioContext.currentTime;
         this.sourceNode.start(0, this.startOffset);

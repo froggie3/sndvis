@@ -3,7 +3,8 @@ import p5 from 'p5';
 import { FFTProcessor } from '../domain/fft-processor.js';
 import { SpectralWhitener } from '../domain/spectral-whitener.js';
 import { ButterflyVisualizer } from '../visualizer/ButterflyVisualizer.js';
-import { MicrophoneSource } from '../io/MicrophoneSource.js';
+import { AudioSourceRegistry } from '../io/AudioSourceRegistry.js';
+import '../io/registeredSources.js';
 import { FileAudioSource } from '../io/FileAudioSource.js';
 import { RealtimeLoop } from '../io/RealtimeLoop.js';
 import { OfflineExportLoop } from '../io/OfflineExportLoop.js';
@@ -84,7 +85,16 @@ export function initAudio(p: p5) {
 
     // Initial Setup
     // Default Source
-    currentSource = new FileAudioSource(appState.fftSize);
+    const registry = AudioSourceRegistry.getInstance();
+    // Default to 'file' or whatever is first
+    try {
+        currentSource = registry.create('file', appState.fftSize);
+        // Initialize immediately
+        const ctx = getAudioContext();
+        currentSource.initialize(ctx);
+    } catch (e) {
+        console.error("Failed to init default source:", e);
+    }
 
     startDriver();
 }
@@ -93,7 +103,8 @@ function startDriver() {
     if (!p5Instance) return;
     if (driver) driver.stop();
 
-    if (currentSource instanceof FileAudioSource) whitener.reset();
+    // Reset whitener on driver restart (simplifies logic)
+    whitener.reset();
 
     driver = new RealtimeLoop(currentSource, processor, whitener, visualizer, p5Instance);
     driver.start();
@@ -168,25 +179,26 @@ export function skip(delta: number) {
     seek(newTime);
 }
 
+
 export async function switchSource(type: string) {
     if (driver) driver.stop();
     if (currentSource) currentSource.disconnect();
 
     appState.currentSourceType = type;
 
-    switch (type) {
-        case 'file':
-            currentSource = new FileAudioSource(appState.fftSize);
-            break;
-        case 'mic':
-        default:
-            currentSource = new MicrophoneSource(appState.fftSize);
-            break;
+    const registry = AudioSourceRegistry.getInstance();
+
+    try {
+        currentSource = registry.create(type, appState.fftSize);
+    } catch (e) {
+        console.error(`Unknown source type: ${type}`, e);
+        return;
     }
 
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') {
-        await ctx.resume();
+        const p = ctx.resume();
+        await p;
     }
 
     try {
